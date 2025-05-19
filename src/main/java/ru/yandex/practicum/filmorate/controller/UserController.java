@@ -25,9 +25,7 @@ public class UserController {
     @PostMapping
     public User createUser(@RequestBody User user) {
         validate(user);
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
+        checkName(user);
         user.setId(getNextId());
         users.put(user.getId(), user);
         log.info("New user created: {}", user);
@@ -40,6 +38,7 @@ public class UserController {
             throw new ValidationException("User with id = " + user.getId() + " was not found");
         }
         validate(user);
+        checkName(user);
         users.put(user.getId(), user);
         log.info("User updated: {}", user);
         return user;
@@ -47,6 +46,7 @@ public class UserController {
 
     @GetMapping
     public List<User> getAllUsers() {
+        log.info("Display a list of all users: {}", users);
         return new ArrayList<>(users.values());
     }
 
@@ -59,6 +59,12 @@ public class UserController {
         }
         if (user.getBirthday() != null && user.getBirthday().isAfter(LocalDate.now())) {
             throw new ValidationException("Birthdate should be in the past");
+        }
+    }
+
+    private void checkName(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
         }
     }
 }

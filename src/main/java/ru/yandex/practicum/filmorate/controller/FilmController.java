@@ -44,18 +44,18 @@ public class FilmController {
 
     @GetMapping
     public List<Film> getAllFilms() {
+        log.info("Display a list of all movies: {}", films);
         return new ArrayList<>(films.values());
     }
 
     private void validate(Film film) {
-        if (film.getName() == null || film.getDescription() == null || film.getReleaseDate() == null
-                || film.getDuration() == null) {
-            throw new ValidationException("No empty fields allowed");
+        if (film.getName() == null || film.getReleaseDate() == null || film.getDuration() == null) {
+            throw new ValidationException("No empty name, release date or duration allowed");
         }
         if (film.getName().isBlank()) {
             throw new ValidationException("Name is required");
         }
-        if (film.getDescription().length() > 200) {
+        if (film.getDescription() != null && film.getDescription().length() > 200) {
             throw new ValidationException("Description length is longer than 200 symbols");
         }
         if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
