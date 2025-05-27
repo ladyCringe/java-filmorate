@@ -13,5 +13,5 @@ public interface FilmStorage {
 
     Film getFilmById(Integer id);
 
-    boolean filmExists(Integer id);
+    List<Film> getPopularFilms(int count);
 }

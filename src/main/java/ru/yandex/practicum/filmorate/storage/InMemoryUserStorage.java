@@ -44,9 +44,4 @@ public class InMemoryUserStorage implements UserStorage {
     public User getUserById(Integer id) {
         return users.get(id);
     }
-
-    @Override
-    public boolean userExists(Integer id) {
-        return users.containsKey(id);
-    }
 }

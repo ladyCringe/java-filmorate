@@ -85,9 +85,10 @@ public class UserService {
     }
 
     private User getUserById(int id) {
-        if (!userStorage.userExists(id)) {
+        User user = userStorage.getUserById(id);
+        if (user == null) {
             throw new NotFoundException("User with id " + id + " not found");
         }
-        return userStorage.getUserById(id);
+        return user;
     }
 }

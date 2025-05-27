@@ -12,6 +12,4 @@ public interface UserStorage {
     List<User> getAllUsers();
 
     User getUserById(Integer id);
-
-    boolean userExists(Integer id);
 }
