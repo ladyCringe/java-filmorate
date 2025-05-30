@@ -10,11 +10,11 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.storage.FilmDbStorage;
-import ru.yandex.practicum.filmorate.storage.UserDbStorage;
 
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,9 +35,7 @@ class FilmDbStorageTest {
         film.setReleaseDate(LocalDate.of(2014, 11, 7));
         film.setDuration(169);
         film.setMpa(new MpaRating(1, "PG-13"));
-        film.setGenres(new HashSet<Genre>() {{
-            add(new Genre(2, "Comedy"));
-        }});
+        film.setGenres(new HashSet<>(Set.of(new Genre(2, "Comedy"))));
         filmStorage.createFilm(film);
 
         Film loaded = filmStorage.getAllFilms().getLast();
