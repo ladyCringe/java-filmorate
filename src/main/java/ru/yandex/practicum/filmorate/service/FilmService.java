@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.service;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ServerException;
@@ -16,7 +17,8 @@ public class FilmService {
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
 
-    public FilmService(FilmStorage filmStorage, UserStorage userStorage) {
+    public FilmService(@Qualifier(value = "filmDbStorage") FilmStorage filmStorage,
+                       @Qualifier(value = "userDbStorage") UserStorage userStorage) {
         this.filmStorage = filmStorage;
         this.userStorage = userStorage;
     }
@@ -59,7 +61,7 @@ public class FilmService {
         if (film.getLikes().contains(userId)) {
             throw new ServerException("Film with id " + filmId + " already liked by user " + userId);
         }
-        film.getLikes().add(userId);
+        filmStorage.addLike(filmId, userId);
     }
 
     public void removeLike(int filmId, int userId) {
@@ -69,7 +71,7 @@ public class FilmService {
             throw new NotFoundException("Like by user with id" + userId +
                     " for film with filmId" + filmId + " was not found");
         }
-        film.getLikes().remove(userId);
+        filmStorage.removeLike(filmId, userId);
     }
 
     public List<Film> getPopularFilms(int count) {
@@ -79,7 +81,7 @@ public class FilmService {
         return filmStorage.getPopularFilms(count);
     }
 
-    private Film getFilmById(int id) {
+    public Film getFilmById(int id) {
         Film film = filmStorage.getFilmById(id);
         if (film == null) {
             throw new NotFoundException("Film with id " + id + " not found");

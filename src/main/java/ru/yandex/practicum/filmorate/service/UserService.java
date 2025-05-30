@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.service;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -16,7 +17,7 @@ public class UserService {
 
     private final UserStorage userStorage;
 
-    public UserService(UserStorage userStorage) {
+    public UserService(@Qualifier(value = "userDbStorage") UserStorage userStorage) {
         this.userStorage = userStorage;
     }
 
@@ -37,17 +38,15 @@ public class UserService {
     }
 
     public void addFriend(int userId, int friendId) {
-        User user = getUserById(userId);
-        User friend = getUserById(friendId);
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
+        checkUser(userId);
+        checkUser(friendId);
+        userStorage.addFriend(userId, friendId);
     }
 
     public void removeFriend(int userId, int friendId) {
-        User user = getUserById(userId);
-        User friend = getUserById(friendId);
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
+        checkUser(userId);
+        checkUser(friendId);
+        userStorage.removeFriend(userId, friendId);
     }
 
     public List<User> getFriends(int userId) {
@@ -90,5 +89,11 @@ public class UserService {
             throw new NotFoundException("User with id " + id + " not found");
         }
         return user;
+    }
+
+    private void checkUser(int userId) {
+        if (userStorage.getUserById(userId) == null) {
+            throw new NotFoundException("User with id " + userId + " not found");
+        }
     }
 }
