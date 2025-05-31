@@ -25,7 +25,7 @@ public class GenreDbStorage implements GenreStorage {
     @Override
     public Genre findById(int id) {
         if (!existsById(id)) {
-            throw new NotFoundException("Genre does not exist");
+            throw new NotFoundException("Genre with id " + id + " does not exist");
         }
         return jdbcTemplate.queryForObject("SELECT * FROM genres WHERE id = ?", this::mapRowToGenre, id);
     }

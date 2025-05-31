@@ -11,9 +11,7 @@ import ru.yandex.practicum.filmorate.model.MpaRating;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Slf4j
 @Repository
@@ -80,9 +78,33 @@ public class FilmDbStorage implements FilmStorage {
         return film;
     }
 
-    @Override
     public List<Film> getAllFilms() {
-        return jdbcTemplate.query("SELECT * FROM films", this::mapRowToFilm);
+        String filmSql = """
+        SELECT f.*, m.name AS mpa_name
+        FROM films f
+        JOIN mpa_ratings m ON f.mpa_id = m.id
+    """;
+
+        List<Film> films = jdbcTemplate.query(filmSql, (rs, rowNum) -> {
+            Film film = new Film();
+            film.setId(rs.getInt("id"));
+            film.setName(rs.getString("name"));
+            film.setDescription(rs.getString("description"));
+            film.setReleaseDate(rs.getDate("release_date").toLocalDate());
+            film.setDuration(rs.getInt("duration"));
+            film.setMpa(new MpaRating(rs.getInt("mpa_id"), rs.getString("mpa_name")));
+            return film;
+        });
+
+        Map<Integer, Set<Genre>> genresMap = getGenresForFilms();
+        Map<Integer, Set<Integer>> likesMap = getLikesForFilms();
+
+        for (Film film : films) {
+            film.setGenres(genresMap.getOrDefault(film.getId(), Set.of()));
+            film.getLikes().addAll(likesMap.getOrDefault(film.getId(), Set.of()));
+        }
+
+        return films;
     }
 
     @Override
@@ -95,27 +117,77 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getPopularFilms(int count) {
-        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
-                    "FROM films f LEFT JOIN likes l ON f.id = l.film_id " +
-                    "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
-                    "ORDER BY COUNT(l.user_id) DESC LIMIT ?";
+        String sql = """
+        SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name as mpa_name
+        FROM films f
+        JOIN mpa_ratings m ON f.mpa_id = m.id
+        LEFT JOIN likes l ON f.id = l.film_id
+        GROUP BY f.id, m.name
+        ORDER BY COUNT(l.user_id) DESC
+        LIMIT ?
+    """;
 
-        return jdbcTemplate.query(sql, this::mapRowToFilm, count);
+        List<Film> films = jdbcTemplate.query(sql, (rs, rowNum) -> {
+            Film film = new Film();
+            film.setId(rs.getInt("id"));
+            film.setName(rs.getString("name"));
+            film.setDescription(rs.getString("description"));
+            film.setReleaseDate(rs.getDate("release_date").toLocalDate());
+            film.setDuration(rs.getInt("duration"));
+            film.setMpa(new MpaRating(rs.getInt("mpa_id"), rs.getString("mpa_name")));
+            return film;
+        }, count);
+
+        Map<Integer, Set<Genre>> genresByFilmId = getGenresForFilms();
+
+        for (Film film : films) {
+            film.setGenres(genresByFilmId.getOrDefault(film.getId(), Set.of()));
+        }
+
+        return films;
     }
 
     @Override
     public void addLike(int filmId, int userId) {
-        checkUserAndFilmExist(filmId, userId);
-
         String sql = "MERGE INTO likes (film_id, user_id) VALUES (?, ?)";
         jdbcTemplate.update(sql, filmId, userId);
     }
 
     @Override
     public void removeLike(int filmId, int userId) {
-        checkUserAndFilmExist(filmId, userId);
         String sql = "DELETE FROM likes WHERE film_id = ? AND user_id = ?";
         jdbcTemplate.update(sql, filmId, userId);
+    }
+
+    private Map<Integer, Set<Genre>> getGenresForFilms() {
+        return jdbcTemplate.query("""
+        SELECT fg.film_id, g.id, g.name
+        FROM film_genres fg
+        JOIN genres g ON fg.genre_id = g.id
+    """, rs -> {
+            Map<Integer, Set<Genre>> map = new HashMap<>();
+            while (rs.next()) {
+                int filmId = rs.getInt("film_id");
+                Genre genre = new Genre(rs.getInt("id"), rs.getString("name"));
+                map.computeIfAbsent(filmId, k -> new HashSet<>()).add(genre);
+            }
+            return map;
+        });
+    }
+
+    private Map<Integer, Set<Integer>> getLikesForFilms() {
+        return jdbcTemplate.query("""
+        SELECT film_id, user_id
+        FROM likes
+    """, rs -> {
+            Map<Integer, Set<Integer>> map = new HashMap<>();
+            while (rs.next()) {
+                int filmId = rs.getInt("film_id");
+                int userId = rs.getInt("user_id");
+                map.computeIfAbsent(filmId, k -> new HashSet<>()).add(userId);
+            }
+            return map;
+        });
     }
 
     private Film mapRowToFilm(ResultSet rs, int rowNum) throws SQLException {
@@ -178,17 +250,5 @@ public class FilmDbStorage implements FilmStorage {
             }
         }
         return true;
-    }
-
-    private void checkUserAndFilmExist(int filmId, int userId) {
-        if (!filmExistsById(filmId)) {
-            throw new NotFoundException("Film with id " + filmId + " not found.");
-        }
-
-        String userCheckSql = "SELECT COUNT(*) FROM USERS WHERE id = ?";
-        Integer userCount = jdbcTemplate.queryForObject(userCheckSql, Integer.class, userId);
-        if (userCount == 0) {
-            throw new NotFoundException("User with id " + userId + " not found.");
-        }
     }
 }

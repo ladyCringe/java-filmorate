@@ -52,7 +52,6 @@ class FilmorateApplicationTests {
     @Test
     void testUpdateUser() {
         User user = userStorage.getUserById(20);
-        // Обновляем
         user.setEmail("new@ya.ru");
         user.setLogin("newlogin");
         user.setName("New Name");
@@ -64,7 +63,6 @@ class FilmorateApplicationTests {
                 .hasFieldOrPropertyWithValue("login", "newlogin")
                 .hasFieldOrPropertyWithValue("name", "New Name");
     }
-
 
     @Test
     void testGetAllUsers() {

@@ -23,7 +23,7 @@ public class UserDbStorage implements UserStorage {
     @Override
     public User createUser(User user) {
         if (user.getId() != null) {
-            throw new ServerException("User id already exists");
+            throw new ServerException("User with id " + user.getId() + " already exists");
         }
         Integer nextId = jdbcTemplate.queryForObject(
                 "SELECT COALESCE(MAX(id), 0) + 1 FROM USERS", Integer.class
@@ -38,7 +38,7 @@ public class UserDbStorage implements UserStorage {
     @Override
     public User updateUser(User user) {
         if (!existsById(user.getId())) {
-            throw new NotFoundException("User not found");
+            throw new NotFoundException("User with id " + user.getId() + " not found");
         }
         String sql = "UPDATE users SET email = ?, login = ?, name = ?, birthday = ? WHERE id = ?";
         jdbcTemplate.update(sql, user.getEmail(), user.getLogin(), user.getName(), user.getBirthday(), user.getId());
@@ -53,7 +53,7 @@ public class UserDbStorage implements UserStorage {
     @Override
     public User getUserById(Integer id) {
         if (!existsById(id)) {
-            throw new NotFoundException("User not found");
+            throw new NotFoundException("User with id " + id + " not found");
         }
         User user = jdbcTemplate.queryForObject("SELECT * FROM users WHERE id = ?", this::mapRowToUser, id);
         if (user != null) {
@@ -82,9 +82,6 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void addFriend(Integer userId, Integer friendId) {
-        getUserById(userId);
-        getUserById(friendId);
-
         Boolean alreadyAdded = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) > 0 FROM friendships WHERE user_id = ? AND friend_id = ?",
                 Boolean.class, friendId, userId
