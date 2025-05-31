@@ -11,7 +11,6 @@ import java.util.Map;
 
 @Component
 public class InMemoryUserStorage implements UserStorage {
-
     private final Map<Integer, User> users = new HashMap<>();
     private int nextId = 1;
 
@@ -43,5 +42,21 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public User getUserById(Integer id) {
         return users.get(id);
+    }
+
+    @Override
+    public void addFriend(Integer userId, Integer friendId) {
+        User user = getUserById(userId);
+        User friend = getUserById(friendId);
+        user.getFriends().add(friendId);
+        friend.getFriends().add(userId);
+    }
+
+    @Override
+    public void removeFriend(Integer userId, Integer friendId) {
+        User user = getUserById(userId);
+        User friend = getUserById(friendId);
+        user.getFriends().remove(friendId);
+        friend.getFriends().remove(userId);
     }
 }
