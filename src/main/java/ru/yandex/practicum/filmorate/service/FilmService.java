@@ -74,11 +74,11 @@ public class FilmService {
         filmStorage.removeLike(filmId, userId);
     }
 
-    public List<Film> getPopularFilms(int count) {
-        if (count < 0) {
-            throw new ServerException("Film count should be greater than 0");
+    public List<Film> getPopularFilms(Integer count, Integer genreId, Integer year) {
+        if (count != null && count < 0) {
+            throw new ServerException("If not null film count should be greater than 0");
         }
-        return filmStorage.getPopularFilms(count);
+        return filmStorage.getPopularFilms(count, genreId, year);
     }
 
     public Film getFilmById(int id) {

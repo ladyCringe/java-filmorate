@@ -116,27 +116,41 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public List<Film> getPopularFilms(int count) {
-        String sql = """
-        SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name as mpa_name
+    public List<Film> getPopularFilms(Integer count, Integer genreId, Integer year) {
+        StringBuilder sql = new StringBuilder("""
+        SELECT f.*, m.name AS mpa_name
         FROM films f
         JOIN mpa_ratings m ON f.mpa_id = m.id
         LEFT JOIN likes l ON f.id = l.film_id
+    """);
+
+        List<Object> params = new ArrayList<>();
+
+        if (genreId != null) {
+            sql.append("JOIN film_genres fg ON f.id = fg.film_id ");
+        }
+
+        sql.append("WHERE 1=1 ");
+
+        if (genreId != null) {
+            sql.append("AND fg.genre_id = ? ");
+            params.add(genreId);
+        }
+
+        if (year != null) {
+            sql.append("AND EXTRACT(YEAR FROM f.release_date) = ? ");
+            params.add(year);
+        }
+
+        sql.append("""
         GROUP BY f.id, m.name
         ORDER BY COUNT(l.user_id) DESC
         LIMIT ?
-    """;
+    """);
 
-        List<Film> films = jdbcTemplate.query(sql, (rs, rowNum) -> {
-            Film film = new Film();
-            film.setId(rs.getInt("id"));
-            film.setName(rs.getString("name"));
-            film.setDescription(rs.getString("description"));
-            film.setReleaseDate(rs.getDate("release_date").toLocalDate());
-            film.setDuration(rs.getInt("duration"));
-            film.setMpa(new MpaRating(rs.getInt("mpa_id"), rs.getString("mpa_name")));
-            return film;
-        }, count);
+        params.add(count != null ? count : Integer.MAX_VALUE);
+
+        List<Film> films = jdbcTemplate.query(sql.toString(), this::mapRowToFilm, params.toArray());
 
         Map<Integer, Set<Genre>> genresByFilmId = getGenresForFilms();
 
