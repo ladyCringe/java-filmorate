@@ -162,6 +162,19 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
+    public List<Film> getFilmsByDirectorSortByYear(Director director) {
+        final String query = "SELECT * FROM FILMS f" +
+                " INNER JOIN FILM_DIRECTOR fd ON f.id = fd.film_id AND fd.director_id = ?" +
+                " ORDER BY f.RELEASE_DATE;";
+
+        return jdbcTemplate.query(query, this::mapRowToFilm, director.getId());
+    }
+
+    public List<Film> getFilmsByDirectorSortByLikes(Director director) {
+        return null;
+    }
+
+    @Override
     public Film getFilmById(Integer id) {
         if (!filmExistsById(id)) {
             throw new NotFoundException("Film with id " + id + " not found");

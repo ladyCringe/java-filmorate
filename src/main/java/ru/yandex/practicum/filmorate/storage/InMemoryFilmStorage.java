@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.storage;
 
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.*;
@@ -66,5 +67,15 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public List<Film> getCommonFilms(int userId, int friendId) {
         return List.of();
+    }
+
+    @Override
+    public List<Film> getFilmsByDirectorSortByYear(Director director) {
+        return List.of();   // в этом хранилище метод не используется
+    }
+
+    @Override
+    public List<Film> getFilmsByDirectorSortByLikes(Director director) {
+        return List.of();   // в этом хранилище метод не используется
     }
 }
