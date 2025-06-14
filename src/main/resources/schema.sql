@@ -77,5 +77,8 @@ name VARCHAR NOT NULL CHECK (TRIM('	 ' FROM name) != '')	--у режиссера
 													--если после удаления всех пробелов и табуляций значение будет пустое, то запрещаем добавлять в таблицу
 );
 
-ALTER TABLE IF EXISTS Films ADD COLUMN IF NOT EXISTS director_id INTEGER REFERENCES Directors (id);	-- режиссер фильма
-                -- ограничение NOT NULL, т.к. в таблице могут быть фильмы
+CREATE TABLE IF NOT EXISTS Film_Director (
+film_id INTEGER NOT NULL REFERENCES films (id) ON DELETE CASCADE,
+director_id INTEGER NOT NULL REFERENCES directors (id) ON DELETE CASCADE,
+PRIMARY KEY (film_id, director_id)
+);
