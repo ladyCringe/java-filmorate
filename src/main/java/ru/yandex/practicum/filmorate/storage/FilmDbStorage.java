@@ -171,7 +171,28 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     public List<Film> getFilmsByDirectorSortByLikes(Director director) {
-        return null;
+        final String query = "--запрос с несколькими with не сработал в jdbc\n" +
+                "SELECT *\n" +
+                "FROM films\n" +
+                "INNER JOIN\n" +
+                "(\n" +
+                "\tSELECT film_isLike.id AS film_id, sum(film_isLike.isLike) AS sumLike\n" +
+                "\tFROM\n" +
+                "\t(\n" +
+                "\t\tSELECT f.id,\n" +
+                "\t\t\tCASE\n" +
+                "\t\t\t\tWHEN l.film_id IS NULL THEN 0\n" +
+                "\t\t\t\tELSE 1\n" +
+                "\t\t\tEND AS isLike\n" +
+                "\t\tFROM FILMS f\n" +
+                "\t\tINNER JOIN FILM_DIRECTOR fd ON fd.film_id = f.id AND fd.director_id = ?\n" +
+                "\t\tLEFT JOIN LIKES l ON l.film_id = f.id\n" +
+                "\t) AS film_isLike\n" +
+                "\tGROUP BY film_isLike.id) AS film_sumLike\n" +
+                "ON film_sumLike.film_id = films.id\n" +
+                "ORDER BY film_sumLike.sumLike;\n";
+
+        return jdbcTemplate.query(query, this::mapRowToFilm, director.getId());
     }
 
     @Override
