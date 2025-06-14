@@ -73,7 +73,7 @@ class FilmDbStorageTest {
 
     @Test
     void testGetPopularFilms() {
-        List<Film> popular = filmStorage.getPopularFilms(2);
+        List<Film> popular = filmStorage.getPopularFilms(2, null, null);
         assertThat(popular.size()).isGreaterThanOrEqualTo(2);
     }
 }

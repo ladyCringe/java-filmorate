@@ -13,7 +13,7 @@ public interface FilmStorage {
 
     Film getFilmById(Integer id);
 
-    List<Film> getPopularFilms(int count);
+    List<Film> getPopularFilms(Integer count, Integer genreId, Integer year);
 
     void addLike(int filmId, int userId);
 
