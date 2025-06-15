@@ -70,4 +70,11 @@ public class FilmController {
     public List<Film> getCommonFilms(@RequestParam("userId") int userId, @RequestParam("friendId") int friendId) {
         return filmService.getCommonFilms(userId, friendId);
     }
+
+    @GetMapping("/director/{directorId}")
+    public List<Film> getFilmsByDirector(@PathVariable Long directorId,
+                                         @RequestParam(name = "sortBy", defaultValue = "year") String sort) {
+
+        return filmService.getFilmsByDirector(directorId, sort);
+    }
 }

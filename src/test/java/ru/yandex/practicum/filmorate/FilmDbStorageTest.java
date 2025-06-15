@@ -9,7 +9,9 @@ import org.springframework.context.annotation.Import;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MpaRating;
+import ru.yandex.practicum.filmorate.storage.DirectorDbStorage;
 import ru.yandex.practicum.filmorate.storage.FilmDbStorage;
+import ru.yandex.practicum.filmorate.storage.mappers.DirectorRowMapper;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -21,7 +23,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @JdbcTest
 @AutoConfigureTestDatabase
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-@Import({FilmDbStorage.class})
+@Import({FilmDbStorage.class,
+        DirectorDbStorage.class,
+        DirectorRowMapper.class})
 class FilmDbStorageTest {
 
     @Autowired

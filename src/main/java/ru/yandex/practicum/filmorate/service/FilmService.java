@@ -1,10 +1,12 @@
 package ru.yandex.practicum.filmorate.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ServerException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
@@ -18,6 +20,9 @@ public class FilmService {
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
     private final UserService userService;
+
+    @Autowired
+    private DirectorService directorService;
 
     public FilmService(@Qualifier(value = "filmDbStorage") FilmStorage filmStorage,
                        @Qualifier(value = "userDbStorage") UserStorage userStorage,
@@ -39,6 +44,14 @@ public class FilmService {
 
     public List<Film> getAllFilms() {
         return filmStorage.getAllFilms();
+    }
+
+    public List<Film> getFilmsByDirector(Long directorId, String sort) {
+        Director director = directorService.getById(directorId);
+
+        if (sort.equals("year")) return filmStorage.getFilmsByDirectorSortByYear(director);
+        else if (sort.equals("likes")) return filmStorage.getFilmsByDirectorSortByLikes(director);
+        else throw new ValidationException("Не верное значение параметра сортировки при получении фильмов режиссера.");
     }
 
     private void validate(Film film) {
