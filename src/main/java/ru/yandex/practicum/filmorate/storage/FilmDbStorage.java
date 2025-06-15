@@ -206,11 +206,11 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public List<Film> getPopularFilms(Integer count, Integer genreId, Integer year) {
         StringBuilder sql = new StringBuilder("""
-        SELECT f.*, m.name AS mpa_name
-        FROM films f
-        JOIN mpa_ratings m ON f.mpa_id = m.id
-        LEFT JOIN likes l ON f.id = l.film_id
-    """);
+                    SELECT f.*, m.name AS mpa_name
+                    FROM films f
+                    JOIN mpa_ratings m ON f.mpa_id = m.id
+                    LEFT JOIN likes l ON f.id = l.film_id
+                """);
 
         List<Object> params = new ArrayList<>();
 
@@ -231,10 +231,10 @@ public class FilmDbStorage implements FilmStorage {
         }
 
         sql.append("""
-        GROUP BY f.id, m.name
-        ORDER BY COUNT(l.user_id) DESC
-        LIMIT ?
-    """);
+                    GROUP BY f.id, m.name
+                    ORDER BY COUNT(l.user_id) DESC
+                    LIMIT ?
+                """);
 
         params.add(count != null ? count : Integer.MAX_VALUE);
 
