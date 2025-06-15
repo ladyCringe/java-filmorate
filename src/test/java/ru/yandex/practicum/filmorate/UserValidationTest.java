@@ -6,6 +6,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.RecommendationService;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 import ru.yandex.practicum.filmorate.service.FeedService;
 import ru.yandex.practicum.filmorate.service.UserService;
 import ru.yandex.practicum.filmorate.storage.FeedDbStorage;
@@ -20,10 +24,13 @@ import static org.junit.jupiter.api.Assertions.*;
 public class UserValidationTest {
 
     private final UserStorage userStorage = new InMemoryUserStorage();
+    private final FilmStorage filmStorage = new InMemoryFilmStorage();
     private final FeedStorage feedStorage = new FeedDbStorage(new JdbcTemplate());
     private final FeedService feedService = new FeedService(feedStorage, userStorage);
     private final UserService userService = new UserService(userStorage, feedService);
-    private final UserController controller = new UserController(userService);
+    private final RecommendationService recommendationService = new RecommendationService(userStorage, filmStorage);
+    private final UserController controller = new UserController(userService, recommendationService);
+
     private User existing;
 
     @BeforeEach
