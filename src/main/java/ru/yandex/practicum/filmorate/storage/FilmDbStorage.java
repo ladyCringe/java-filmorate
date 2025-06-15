@@ -93,7 +93,7 @@ public class FilmDbStorage implements FilmStorage {
             "\t\t\t(\n" +
             "\t\t\t\tSELECT d.id AS director_id\n" +
             "\t\t\t\tFROM DIRECTORS AS d\n" +
-            "\t\t\t\tWHERE d.name ILIKE concat('%', 'd', '%')\n" +
+            "\t\t\t\tWHERE d.name ILIKE concat('%', :searchQuery, '%')\n" +
             "\t\t\t) AS d_search\n" +
             "\t\t\tINNER JOIN FILM_DIRECTOR AS fd ON fd.director_id = d_search.director_id\n" +
             "\t\t\t\n" +
