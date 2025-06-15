@@ -170,6 +170,7 @@ public class FilmDbStorage implements FilmStorage {
         return jdbcTemplate.query(query, this::mapRowToFilm, director.getId());
     }
 
+    @Override
     public List<Film> getFilmsByDirectorSortByLikes(Director director) {
         final String query = "--запрос с несколькими with не сработал в jdbc\n" +
                 "SELECT *\n" +
@@ -193,6 +194,21 @@ public class FilmDbStorage implements FilmStorage {
                 "ORDER BY film_sumLike.sumLike DESC;\n";    //в задании сортировать по годам, в тестах обратный порядок
 
         return jdbcTemplate.query(query, this::mapRowToFilm, director.getId());
+    }
+
+    @Override
+    public List<Film> getFilmsBySearchInTitle(String query) {
+        return List.of();   //todo
+    }
+
+    @Override
+    public List<Film> getFilmsBySearchInNameDirector(String query) {
+        return List.of();   //todo
+    }
+
+    @Override
+    public List<Film> getFilmsBySearchInTitleAndNameDirector(String query) {
+        return List.of();   //todo
     }
 
     @Override
