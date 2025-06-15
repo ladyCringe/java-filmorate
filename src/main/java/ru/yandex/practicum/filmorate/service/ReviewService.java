@@ -5,6 +5,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.EventType;
+import ru.yandex.practicum.filmorate.model.FeedEvent;
+import ru.yandex.practicum.filmorate.model.Operation;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.ReviewStorage;
@@ -17,28 +20,40 @@ public class ReviewService {
     private final ReviewStorage reviewStorage;
     private final UserStorage userStorage;
     private final FilmStorage filmStorage;
+    private final FeedService feedService;
 
     public ReviewService(@Qualifier(value = "reviewDbStorage") ReviewStorage reviewStorage,
                          @Qualifier(value = "filmDbStorage") FilmStorage filmStorage,
-                         @Qualifier(value = "userDbStorage") UserStorage userStorage) {
+                         @Qualifier(value = "userDbStorage") UserStorage userStorage,
+                         @Qualifier(value = "feedService") FeedService feedService) {
         this.reviewStorage = reviewStorage;
         this.filmStorage = filmStorage;
         this.userStorage = userStorage;
+        this.feedService = feedService;
     }
 
     public Review createReview(Review review) {
         validateReview(review);
-        return reviewStorage.createReview(review);
+        Review savedReview = reviewStorage.createReview(review);
+        feedService.addEvent(new FeedEvent(null, null, savedReview.getUserId(),
+                EventType.REVIEW, Operation.ADD, savedReview.getReviewId()));
+        return savedReview;
     }
 
     public Review updateReview(Review review) {
         validateReview(review);
-        return reviewStorage.updateReview(review);
+        Review updatedReview = reviewStorage.updateReview(review);
+        feedService.addEvent(new FeedEvent(null, null, updatedReview.getUserId(),
+                EventType.REVIEW, Operation.UPDATE, updatedReview.getReviewId()));
+        return updatedReview;
     }
 
     public void deleteReview(int id) {
-        validateReview(getReviewById(id));
+        Review review = getReviewById(id);
+        validateReview(review);
         reviewStorage.deleteReview(id);
+        feedService.addEvent(new FeedEvent(null, null,
+                review.getUserId(), EventType.REVIEW, Operation.REMOVE, id));
     }
 
     public Review getReviewById(int id) {
