@@ -24,3 +24,4 @@ public interface FilmStorage {
 
     Collection<Film> getLikedFilms(int userId);
 }
+
