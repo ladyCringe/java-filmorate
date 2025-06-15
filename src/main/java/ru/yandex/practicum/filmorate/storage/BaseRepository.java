@@ -11,7 +11,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
-import ru.yandex.practicum.filmorate.exception.InternalServerException;
+import ru.yandex.practicum.filmorate.exception.ServerException;
 
 import java.sql.PreparedStatement;
 import java.util.List;
@@ -76,7 +76,7 @@ public class BaseRepository<T> {
             // Возвращаем id нового пользователя
             return Objects.requireNonNull(keyHolder.getKey()).longValue();
         } catch (DataAccessException e) {
-            throw new InternalServerException("Не удалось сохранить данные");
+            throw new ServerException("Не удалось сохранить данные");
         }
     }
 
