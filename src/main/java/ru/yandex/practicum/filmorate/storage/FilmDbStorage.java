@@ -278,4 +278,19 @@ public class FilmDbStorage implements FilmStorage {
 
         return jdbcTemplate.query(sql, this::mapRowToFilm, userId, friendId);
     }
+
+    public Collection<Film> getLikedFilms(int userId) {
+        String sql = "SELECT film_id FROM likes WHERE user_id = ?";
+        List<Integer> filmIds = jdbcTemplate.queryForList(sql, Integer.class, userId);
+        Collection<Film> likedFilms = new HashSet<>();
+        for (Integer filmId : filmIds) {
+            try {
+                Film film = getFilmById(filmId);
+                likedFilms.add(film);
+            } catch (NotFoundException e) {
+                log.warn("Фильм с ID {} был лайкнут, но не найден в БД", filmId);
+            }
+        }
+        return likedFilms;
+    }
 }

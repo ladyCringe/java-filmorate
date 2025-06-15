@@ -5,7 +5,10 @@ import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.RecommendationService;
 import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -16,8 +19,10 @@ import static org.junit.jupiter.api.Assertions.*;
 public class UserValidationTest {
 
     private final UserStorage userStorage = new InMemoryUserStorage();
+    private final FilmStorage filmStorage = new InMemoryFilmStorage();
     private final UserService userService = new UserService(userStorage);
-    private final UserController controller = new UserController(userService);
+    private final RecommendationService recommendationService = new RecommendationService(userStorage,filmStorage);
+    private final UserController controller = new UserController(userService,recommendationService);
     private User existing;
 
     @BeforeEach

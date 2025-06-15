@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.storage;
 
 import ru.yandex.practicum.filmorate.model.Film;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface FilmStorage {
@@ -20,4 +21,6 @@ public interface FilmStorage {
     void removeLike(int filmId, int userId);
 
     List<Film> getCommonFilms(int userId, int friendId);
+
+    Collection<Film> getLikedFilms(int userId);
 }
