@@ -265,4 +265,17 @@ public class FilmDbStorage implements FilmStorage {
         }
         return true;
     }
+
+    @Override
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        String sql = "SELECT f.*, COUNT(DISTINCT fl.user_id) AS popularity " +
+                "FROM films f " +
+                "JOIN likes fl ON f.id = fl.film_id " +
+                "WHERE fl.user_id IN (?, ?) " +
+                "GROUP BY f.id " +
+                "HAVING COUNT(DISTINCT fl.user_id) = 2 " +
+                "ORDER BY popularity DESC";
+
+        return jdbcTemplate.query(sql, this::mapRowToFilm, userId, friendId);
+    }
 }

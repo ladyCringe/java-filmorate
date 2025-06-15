@@ -10,17 +10,21 @@ import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 
 @Service
 public class FilmService {
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
+    private final UserService userService;
 
     public FilmService(@Qualifier(value = "filmDbStorage") FilmStorage filmStorage,
-                       @Qualifier(value = "userDbStorage") UserStorage userStorage) {
+                       @Qualifier(value = "userDbStorage") UserStorage userStorage,
+                       @Qualifier(value = "userService") UserService userService) {
         this.filmStorage = filmStorage;
         this.userStorage = userStorage;
+        this.userService = userService;
     }
 
     public Film createFilm(Film film) {
@@ -93,5 +97,15 @@ public class FilmService {
         if (userStorage.getUserById(userId) == null) {
             throw new NotFoundException("User with id = " + userId + " was not found");
         }
+    }
+
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        if (userId == friendId) {
+            throw new IllegalArgumentException("Пользователь и друг не могут быть одним и тем же человеком");
+        }
+        userService.getUserById(userId);
+        userService.getUserById(friendId);
+        List<Film> commonFilms = filmStorage.getCommonFilms(userId, friendId);
+        return commonFilms != null ? commonFilms : Collections.emptyList();
     }
 }
