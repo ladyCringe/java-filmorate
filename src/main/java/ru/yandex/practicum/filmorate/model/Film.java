@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
@@ -21,6 +22,7 @@ public class Film {
     private Set<Genre> genres = new HashSet<>();
     private MpaRating mpa;
 
-    @JsonProperty(value = "director")
+    @JsonProperty(value = "directors")
+    @JsonAlias("director")
     private Set<Director> directors = new HashSet<>();  //режиссеры фильма (может быт несколько)
 }
