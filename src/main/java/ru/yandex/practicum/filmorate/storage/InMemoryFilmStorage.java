@@ -72,6 +72,9 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public Collection<Film> getLikedFilms(int userId) {
         return List.of();
+    }
+
+    @Override
     public List<Film> getFilmsByDirectorSortByYear(Director director) {
         return List.of();   // в этом хранилище метод не используется
     }
