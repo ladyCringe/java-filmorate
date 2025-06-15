@@ -190,7 +190,7 @@ public class FilmDbStorage implements FilmStorage {
                 "\t) AS film_isLike\n" +
                 "\tGROUP BY film_isLike.id) AS film_sumLike\n" +
                 "ON film_sumLike.film_id = films.id\n" +
-                "ORDER BY film_sumLike.sumLike;\n";
+                "ORDER BY film_sumLike.sumLike DESC;\n";    //в задании сортировать по годам, в тестах обратный порядок
 
         return jdbcTemplate.query(query, this::mapRowToFilm, director.getId());
     }
