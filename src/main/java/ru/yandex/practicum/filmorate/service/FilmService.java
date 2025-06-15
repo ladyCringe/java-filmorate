@@ -6,10 +6,8 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ServerException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.Director;
-import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -18,18 +16,18 @@ import java.util.List;
 @Service
 public class FilmService {
     private final FilmStorage filmStorage;
-    private final UserStorage userStorage;
     private final UserService userService;
+    private final FeedService feedService;
 
     @Autowired
     private DirectorService directorService;
 
     public FilmService(@Qualifier(value = "filmDbStorage") FilmStorage filmStorage,
-                       @Qualifier(value = "userDbStorage") UserStorage userStorage,
-                       @Qualifier(value = "userService") UserService userService) {
+                       @Qualifier(value = "userService") UserService userService,
+                       @Qualifier(value = "feedService") FeedService feedService) {
         this.filmStorage = filmStorage;
-        this.userStorage = userStorage;
         this.userService = userService;
+        this.feedService = feedService;
     }
 
     public Film createFilm(Film film) {
@@ -79,6 +77,8 @@ public class FilmService {
             throw new ServerException("Film with id " + filmId + " already liked by user " + userId);
         }
         filmStorage.addLike(filmId, userId);
+        feedService.addEvent(new FeedEvent(null, null, userId,
+                EventType.LIKE, Operation.ADD, filmId));
     }
 
     public void removeLike(int filmId, int userId) {
@@ -89,6 +89,8 @@ public class FilmService {
                     " for film with filmId" + filmId + " was not found");
         }
         filmStorage.removeLike(filmId, userId);
+        feedService.addEvent(new FeedEvent(null, null, userId,
+                EventType.LIKE, Operation.REMOVE, filmId));
     }
 
     public List<Film> getPopularFilms(Integer count, Integer genreId, Integer year) {
@@ -107,7 +109,7 @@ public class FilmService {
     }
 
     private void checkExistence(Integer userId) {
-        if (userStorage.getUserById(userId) == null) {
+        if (userService.getUserById(userId) == null) {
             throw new NotFoundException("User with id = " + userId + " was not found");
         }
     }

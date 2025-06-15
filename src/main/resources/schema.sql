@@ -1,15 +1,16 @@
 -- для отладки, чтобы перед каждым тестом не удалять таблицы в консоли
---drop table if exists Film_Director;
---drop table if exists film_genres;
---drop table if exists friendships;
---drop table if exists genres;
---drop table if exists likes;
---drop table if exists review_likes;
---drop table if exists Directors;
---drop table if exists reviews;
---drop table if exists users;
---drop table if exists films;
---drop table if exists mpa_ratings;
+drop table if exists feed;
+drop table if exists Film_Director;
+drop table if exists film_genres;
+drop table if exists friendships;
+drop table if exists genres;
+drop table if exists likes;
+drop table if exists review_likes;
+drop table if exists Directors;
+drop table if exists reviews;
+drop table if exists users;
+drop table if exists films;
+drop table if exists mpa_ratings;
 
 CREATE TABLE IF NOT EXISTS users (
                                      id INT PRIMARY KEY,
@@ -95,3 +96,14 @@ film_id INTEGER NOT NULL REFERENCES films (id) ON DELETE CASCADE,
 director_id INTEGER NOT NULL REFERENCES directors (id) ON DELETE CASCADE,
 PRIMARY KEY (film_id, director_id)
 );
+
+CREATE TABLE IF NOT EXISTS feed (
+                                    event_id INT PRIMARY KEY,
+                                    timestamp BIGINT NOT NULL,
+                                    user_id INT NOT NULL,
+                                    event_type VARCHAR(10) NOT NULL,
+                                    operation VARCHAR(10) NOT NULL,
+                                    entity_id INT NOT NULL,
+                                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
