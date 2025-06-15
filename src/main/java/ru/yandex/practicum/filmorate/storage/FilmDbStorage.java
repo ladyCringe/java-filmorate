@@ -73,9 +73,46 @@ public class FilmDbStorage implements FilmStorage {
             ") AS film_sumLike\n" +
             "ON film_sumLike.film_id = films.id\n" +
             "ORDER BY film_sumLike.sumLike DESC;\n";
-    private static final String FIND_BY_SEARCH_IN_TITLE_AND_DIRECTOR_NAME = "";
-
-
+    private static final String FIND_BY_SEARCH_IN_TITLE_AND_DIRECTOR_NAME = "--запрос с несколькими with не сработал в jdbc\n" +
+            "SELECT *\n" +
+            "FROM films\n" +
+            "INNER JOIN\n" +
+            "(\n" +
+            "\tSELECT film_isLike.film_id AS film_id, sum(film_isLike.isLike) AS sumLike\n" +
+            "\tFROM\n" +
+            "\t(\n" +
+            "\t\tSELECT f_search.film_id,\n" +
+            "\t\tCASE\n" +
+            "\t\t\tWHEN l.film_id IS NULL THEN 0\n" +
+            "\t\t\tELSE 1\n" +
+            "\t\tEND AS isLike\n" +
+            "\t\tFROM\n" +
+            "\t\t(\n" +
+            "\t\t\tSELECT fd.film_id\n" +
+            "\t\t\tFROM\n" +
+            "\t\t\t(\n" +
+            "\t\t\t\tSELECT d.id AS director_id\n" +
+            "\t\t\t\tFROM DIRECTORS AS d\n" +
+            "\t\t\t\tWHERE d.name ILIKE concat('%', 'd', '%')\n" +
+            "\t\t\t) AS d_search\n" +
+            "\t\t\tINNER JOIN FILM_DIRECTOR AS fd ON fd.director_id = d_search.director_id\n" +
+            "\t\t\t\n" +
+            "\t\t\tUNION\n" +
+            "\t\t\t\n" +
+            "\t\t\tSELECT f_search.film_id\n" +
+            "\t\t\tFROM\n" +
+            "\t\t\t(\n" +
+            "\t\t\t\tSELECT f.id AS film_id\n" +
+            "\t\t\t\tFROM FILMS f\n" +
+            "\t\t\t\tWHERE f.name ILIKE concat('%', :searchQuery, '%')\n" +
+            "\t\t\t) AS f_search\n" +
+            "\t\t) AS f_search\n" +
+            "\t\tLEFT JOIN LIKES l ON l.film_id = f_search.film_id\n" +
+            "\t) AS film_isLike\n" +
+            "\tGROUP BY film_isLike.film_id\n" +
+            ") AS film_sumLike\n" +
+            "ON film_sumLike.film_id = films.id\n" +
+            "ORDER BY film_sumLike.sumLike DESC;\n";
     private static final String FIND_BY_DIRECTOR_SORT_BY_LIKES = "--запрос с несколькими with не сработал в jdbc\n" +
             "SELECT *\n" +
             "FROM films\n" +
