@@ -21,8 +21,8 @@ public class UserValidationTest {
     private final UserStorage userStorage = new InMemoryUserStorage();
     private final FilmStorage filmStorage = new InMemoryFilmStorage();
     private final UserService userService = new UserService(userStorage);
-    private final RecommendationService recommendationService = new RecommendationService(userStorage,filmStorage);
-    private final UserController controller = new UserController(userService,recommendationService);
+    private final RecommendationService recommendationService = new RecommendationService(userStorage, filmStorage);
+    private final UserController controller = new UserController(userService, recommendationService);
     private User existing;
 
     @BeforeEach
