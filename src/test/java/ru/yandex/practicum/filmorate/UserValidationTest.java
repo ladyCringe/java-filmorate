@@ -25,13 +25,12 @@ public class UserValidationTest {
 
     private final UserStorage userStorage = new InMemoryUserStorage();
     private final FilmStorage filmStorage = new InMemoryFilmStorage();
-    private final UserService userService = new UserService(userStorage);
-    private final RecommendationService recommendationService = new RecommendationService(userStorage, filmStorage);
-    private final UserController controller = new UserController(userService, recommendationService);
     private final FeedStorage feedStorage = new FeedDbStorage(new JdbcTemplate());
     private final FeedService feedService = new FeedService(feedStorage, userStorage);
     private final UserService userService = new UserService(userStorage, feedService);
-    private final UserController controller = new UserController(userService);
+    private final RecommendationService recommendationService = new RecommendationService(userStorage, filmStorage);
+    private final UserController controller = new UserController(userService, recommendationService);
+
     private User existing;
 
     @BeforeEach
