@@ -52,6 +52,15 @@ public class FilmService {
         else throw new ValidationException("Не верное значение параметра сортировки при получении фильмов режиссера.");
     }
 
+    public List<Film> getFilmsBySearch(String query, String by) {
+        if (by.equals("director")) return filmStorage.getFilmsBySearchInNameDirector(query);
+        else if (by.equals("title")) return filmStorage.getFilmsBySearchInTitle(query);
+        else if (by.equals("director,title") || by.equals("title,director"))
+            return filmStorage.getFilmsBySearchInTitleAndNameDirector(query);
+        else
+            throw new ValidationException("Не верное значение параметра поиска фильма по наименованию и/или режиссеру.");
+    }
+
     private void validate(Film film) {
         if (film.getName() == null || film.getReleaseDate() == null || film.getDuration() == null) {
             throw new ValidationException("No empty name, release date or duration allowed");

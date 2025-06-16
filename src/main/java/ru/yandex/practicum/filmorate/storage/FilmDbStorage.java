@@ -4,6 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
@@ -19,7 +22,122 @@ import java.util.*;
 @Slf4j
 @Repository
 public class FilmDbStorage implements FilmStorage {
+    private static final String FIND_BY_SEARCH_IN_TITLE = "--запрос с несколькими with не сработал в jdbc\n" +
+            "SELECT *\n" +
+            "FROM films\n" +
+            "INNER JOIN\n" +
+            "(\n" +
+            "\tSELECT film_isLike.film_id AS film_id, sum(film_isLike.isLike) AS sumLike\n" +
+            "\tFROM\n" +
+            "\t(\n" +
+            "\t\tSELECT f_search.film_id,\n" +
+            "\t\tCASE\n" +
+            "\t\t\tWHEN l.film_id IS NULL THEN 0\n" +
+            "\t\t\tELSE 1\n" +
+            "\t\tEND AS isLike\n" +
+            "\t\tFROM\n" +
+            "\t\t(\n" +
+            "\t\t\tSELECT f.id AS film_id\n" +
+            "\t\t\tFROM FILMS f\n" +
+            "\t\t\tWHERE f.name ILIKE concat('%', :searchQuery, '%')\n" +
+            "\t\t) AS f_search\n" +
+            "\t\tLEFT JOIN LIKES l ON l.film_id = f_search.film_id\n" +
+            "\t) AS film_isLike\n" +
+            "\tGROUP BY film_isLike.film_id\n" +
+            ") AS film_sumLike\n" +
+            "ON film_sumLike.film_id = films.id\n" +
+            "ORDER BY film_sumLike.sumLike DESC;\n";
+    private static final String FIND_BY_SEARCH_IN_DIRECTOR_NAME = "--запрос с несколькими with не сработал в jdbc\n" +
+            "SELECT *\n" +
+            "FROM films\n" +
+            "INNER JOIN\n" +
+            "(\n" +
+            "\tSELECT film_isLike.film_id AS film_id, sum(film_isLike.isLike) AS sumLike\n" +
+            "\tFROM\n" +
+            "\t(\n" +
+            "\t\tSELECT fd.film_id,\n" +
+            "\t\tCASE\n" +
+            "\t\t\tWHEN l.film_id IS NULL THEN 0\n" +
+            "\t\t\tELSE 1\n" +
+            "\t\tEND AS isLike\n" +
+            "\t\tFROM\n" +
+            "\t\t(\n" +
+            "\t\t\tSELECT d.id AS director_id\n" +
+            "\t\t\tFROM DIRECTORS AS d\n" +
+            "\t\t\tWHERE d.name ILIKE concat('%', :searchQuery, '%')\n" +
+            "\t\t) AS d_search\n" +
+            "\t\tINNER JOIN FILM_DIRECTOR AS fd ON fd.director_id = d_search.director_id\n" +
+            "\t\tLEFT JOIN LIKES l ON l.film_id = fd.film_id\n" +
+            "\t) AS film_isLike\n" +
+            "\tGROUP BY film_isLike.film_id\n" +
+            ") AS film_sumLike\n" +
+            "ON film_sumLike.film_id = films.id\n" +
+            "ORDER BY film_sumLike.sumLike DESC;\n";
+    private static final String FIND_BY_SEARCH_IN_TITLE_AND_DIRECTOR_NAME = "--запрос с несколькими with не сработал в jdbc\n" +
+            "SELECT *\n" +
+            "FROM films\n" +
+            "INNER JOIN\n" +
+            "(\n" +
+            "\tSELECT film_isLike.film_id AS film_id, sum(film_isLike.isLike) AS sumLike\n" +
+            "\tFROM\n" +
+            "\t(\n" +
+            "\t\tSELECT f_search.film_id,\n" +
+            "\t\tCASE\n" +
+            "\t\t\tWHEN l.film_id IS NULL THEN 0\n" +
+            "\t\t\tELSE 1\n" +
+            "\t\tEND AS isLike\n" +
+            "\t\tFROM\n" +
+            "\t\t(\n" +
+            "\t\t\tSELECT fd.film_id\n" +
+            "\t\t\tFROM\n" +
+            "\t\t\t(\n" +
+            "\t\t\t\tSELECT d.id AS director_id\n" +
+            "\t\t\t\tFROM DIRECTORS AS d\n" +
+            "\t\t\t\tWHERE d.name ILIKE concat('%', :searchQuery, '%')\n" +
+            "\t\t\t) AS d_search\n" +
+            "\t\t\tINNER JOIN FILM_DIRECTOR AS fd ON fd.director_id = d_search.director_id\n" +
+            "\t\t\t\n" +
+            "\t\t\tUNION\n" +
+            "\t\t\t\n" +
+            "\t\t\tSELECT f_search.film_id\n" +
+            "\t\t\tFROM\n" +
+            "\t\t\t(\n" +
+            "\t\t\t\tSELECT f.id AS film_id\n" +
+            "\t\t\t\tFROM FILMS f\n" +
+            "\t\t\t\tWHERE f.name ILIKE concat('%', :searchQuery, '%')\n" +
+            "\t\t\t) AS f_search\n" +
+            "\t\t) AS f_search\n" +
+            "\t\tLEFT JOIN LIKES l ON l.film_id = f_search.film_id\n" +
+            "\t) AS film_isLike\n" +
+            "\tGROUP BY film_isLike.film_id\n" +
+            ") AS film_sumLike\n" +
+            "ON film_sumLike.film_id = films.id\n" +
+            "ORDER BY film_sumLike.sumLike DESC;\n";
+    private static final String FIND_BY_DIRECTOR_SORT_BY_LIKES = "--запрос с несколькими with не сработал в jdbc\n" +
+            "SELECT *\n" +
+            "FROM films\n" +
+            "INNER JOIN\n" +
+            "(\n" +
+            "\tSELECT film_isLike.id AS film_id, sum(film_isLike.isLike) AS sumLike\n" +
+            "\tFROM\n" +
+            "\t(\n" +
+            "\t\tSELECT f.id,\n" +
+            "\t\t\tCASE\n" +
+            "\t\t\t\tWHEN l.film_id IS NULL THEN 0\n" +
+            "\t\t\t\tELSE 1\n" +
+            "\t\t\tEND AS isLike\n" +
+            "\t\tFROM FILMS f\n" +
+            "\t\tINNER JOIN FILM_DIRECTOR fd ON fd.film_id = f.id AND fd.director_id = ?\n" +
+            "\t\tLEFT JOIN LIKES l ON l.film_id = f.id\n" +
+            "\t) AS film_isLike\n" +
+            "\tGROUP BY film_isLike.id) AS film_sumLike\n" +
+            "ON film_sumLike.film_id = films.id\n" +
+            "ORDER BY film_sumLike.sumLike DESC;\n";    //в задании сортировать по годам, в тестах обратный порядок
+
     private final JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    protected NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @Autowired
     private DirectorDbStorage directorDbStorage;
@@ -170,29 +288,38 @@ public class FilmDbStorage implements FilmStorage {
         return jdbcTemplate.query(query, this::mapRowToFilm, director.getId());
     }
 
+    @Override
     public List<Film> getFilmsByDirectorSortByLikes(Director director) {
-        final String query = "--запрос с несколькими with не сработал в jdbc\n" +
-                "SELECT *\n" +
-                "FROM films\n" +
-                "INNER JOIN\n" +
-                "(\n" +
-                "\tSELECT film_isLike.id AS film_id, sum(film_isLike.isLike) AS sumLike\n" +
-                "\tFROM\n" +
-                "\t(\n" +
-                "\t\tSELECT f.id,\n" +
-                "\t\t\tCASE\n" +
-                "\t\t\t\tWHEN l.film_id IS NULL THEN 0\n" +
-                "\t\t\t\tELSE 1\n" +
-                "\t\t\tEND AS isLike\n" +
-                "\t\tFROM FILMS f\n" +
-                "\t\tINNER JOIN FILM_DIRECTOR fd ON fd.film_id = f.id AND fd.director_id = ?\n" +
-                "\t\tLEFT JOIN LIKES l ON l.film_id = f.id\n" +
-                "\t) AS film_isLike\n" +
-                "\tGROUP BY film_isLike.id) AS film_sumLike\n" +
-                "ON film_sumLike.film_id = films.id\n" +
-                "ORDER BY film_sumLike.sumLike DESC;\n";    //в задании сортировать по годам, в тестах обратный порядок
+        log.info("Запрошены фильмы по режиссеру {}.", director);
 
-        return jdbcTemplate.query(query, this::mapRowToFilm, director.getId());
+        return jdbcTemplate.query(FIND_BY_DIRECTOR_SORT_BY_LIKES, this::mapRowToFilm, director.getId());
+    }
+
+    @Override
+    public List<Film> getFilmsBySearchInTitle(String query) {
+        log.info("Запрошены фильмы в наименовании которых есть {}.", query);
+
+        SqlParameterSource parameters = new MapSqlParameterSource("searchQuery", query);
+
+        return namedParameterJdbcTemplate.query(FIND_BY_SEARCH_IN_TITLE, parameters, this::mapRowToFilm);
+    }
+
+    @Override
+    public List<Film> getFilmsBySearchInNameDirector(String query) {
+        log.info("Запрошены фильмы, у которых в имени режиссеров есть {}.", query);
+
+        SqlParameterSource parameters = new MapSqlParameterSource("searchQuery", query);
+
+        return namedParameterJdbcTemplate.query(FIND_BY_SEARCH_IN_DIRECTOR_NAME, parameters, this::mapRowToFilm);
+    }
+
+    @Override
+    public List<Film> getFilmsBySearchInTitleAndNameDirector(String query) {
+        log.info("Запрошены фильмы, у которых в наименовании или имени режиссеров есть {}.", query);
+
+        SqlParameterSource parameters = new MapSqlParameterSource("searchQuery", query);
+
+        return namedParameterJdbcTemplate.query(FIND_BY_SEARCH_IN_TITLE_AND_DIRECTOR_NAME, parameters, this::mapRowToFilm);
     }
 
     @Override
