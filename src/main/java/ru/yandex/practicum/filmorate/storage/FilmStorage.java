@@ -34,5 +34,6 @@ public interface FilmStorage {
     List<Film> getFilmsBySearchInNameDirector(String query);
 
     List<Film> getFilmsBySearchInTitleAndNameDirector(String query);
-}
 
+    Film delete(Film film);
+}
