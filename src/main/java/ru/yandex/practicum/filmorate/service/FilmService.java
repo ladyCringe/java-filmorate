@@ -83,7 +83,9 @@ public class FilmService {
         checkExistence(userId);
         Film film = getFilmById(filmId);
         if (film.getLikes().contains(userId)) {
-            throw new ServerException("Film with id " + filmId + " already liked by user " + userId);
+            feedService.addEvent(new FeedEvent(null, null, userId,
+                    EventType.LIKE, Operation.ADD, filmId));
+            return;
         }
         filmStorage.addLike(filmId, userId);
         feedService.addEvent(new FeedEvent(null, null, userId,

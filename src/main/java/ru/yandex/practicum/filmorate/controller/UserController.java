@@ -82,7 +82,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public User findById(@PathVariable(name = "id") Integer userId) {
-        return userService.getById(userId);
+    public User getUserById(@PathVariable(name = "id") Integer userId) {
+        return userService.getUserById(userId);
     }
 }

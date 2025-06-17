@@ -83,10 +83,6 @@ public class UserService {
         return removeUser;
     }
 
-    public User getById(Integer userIdRequest) {
-        return userStorage.getUserById(userIdRequest);
-    }
-
     private void validate(User user) {
         if (user.getEmail() == null || user.getEmail().isBlank() || !user.getEmail().contains("@")) {
             throw new ValidationException("Email should not be empty and must contain @");

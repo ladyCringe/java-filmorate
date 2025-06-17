@@ -189,6 +189,8 @@ public class FilmDbStorage implements FilmStorage {
             jdbcTemplate.update("INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)",
                     film.getId(), genre.getId());
         }
+        List<Genre> newGenres = film.getGenres().stream().sorted(Comparator.comparing(Genre::getId)).toList();
+        film.setGenres(new LinkedHashSet<>(newGenres));
 
         // установим режиссеров фильма
         final String insertFilmDirectorsQuery = "INSERT INTO film_director (film_id, director_id) VALUES (?, ?);";
@@ -254,6 +256,8 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.update(deleteFilmGenresQuery, film.getId());   // удаляем записи о текущих режиссерах фильма
         film.setDirectors(new HashSet<>(directorCollection));
         jdbcTemplate.batchUpdate(insertFilmGenresQuery, getBatchPreparedStatementSetter(film)); // вставляем записи о новых режиссерах
+        List<Genre> newGenres = film.getGenres().stream().sorted(Comparator.comparing(Genre::getId)).toList();
+        film.setGenres(new LinkedHashSet<>(newGenres));
 
         return film;
     }

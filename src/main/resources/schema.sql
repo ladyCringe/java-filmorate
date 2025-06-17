@@ -1,15 +1,15 @@
 -- для отладки, чтобы перед каждым тестом не удалять таблицы в консоли
---drop table if exists feed;
---drop table if exists Film_Director;
---drop table if exists film_genres;
---drop table if exists friendships;
+drop table if exists feed;
+drop table if exists Film_Director;
+drop table if exists film_genres;
+drop table if exists friendships;
 --drop table if exists genres;
---drop table if exists likes;
---drop table if exists review_likes;
---drop table if exists Directors;
---drop table if exists reviews;
---drop table if exists users;
---drop table if exists films;
+drop table if exists likes;
+drop table if exists review_likes;
+drop table if exists Directors;
+drop table if exists reviews;
+drop table if exists users;
+drop table if exists films;
 --drop table if exists mpa_ratings;
 
 CREATE TABLE IF NOT EXISTS users (
