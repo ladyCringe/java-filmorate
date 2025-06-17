@@ -55,7 +55,7 @@ public class UserService {
         checkUser(userId);
         checkUser(friendId);
         userStorage.removeFriend(userId, friendId);
-        feedService.addEvent(new FeedEvent(null, null,userId,
+        feedService.addEvent(new FeedEvent(null, null, userId,
                 EventType.FRIEND, Operation.REMOVE, friendId));
     }
 
@@ -73,6 +73,18 @@ public class UserService {
                 .filter(other.getFriends()::contains)
                 .map(this::getUserById)
                 .collect(Collectors.toList());
+    }
+
+    public User delete(Integer userIdRequest) {
+        User removeUser = userStorage.getUserById(userIdRequest);
+
+        removeUser = userStorage.delete(removeUser);
+
+        return removeUser;
+    }
+
+    public User getById(Integer userIdRequest) {
+        return userStorage.getUserById(userIdRequest);
     }
 
     private void validate(User user) {

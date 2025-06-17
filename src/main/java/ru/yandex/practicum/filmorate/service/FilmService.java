@@ -117,6 +117,14 @@ public class FilmService {
         return film;
     }
 
+    public Film delete(Integer filmIdRequest) {
+        Film removeFilm = filmStorage.getFilmById(filmIdRequest);
+
+        removeFilm = filmStorage.delete(removeFilm);
+
+        return removeFilm;
+    }
+
     private void checkExistence(Integer userId) {
         if (userService.getUserById(userId) == null) {
             throw new NotFoundException("User with id = " + userId + " was not found");

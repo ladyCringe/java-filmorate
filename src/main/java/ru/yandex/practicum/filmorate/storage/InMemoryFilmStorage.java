@@ -98,4 +98,9 @@ public class InMemoryFilmStorage implements FilmStorage {
     public List<Film> getFilmsBySearchInTitleAndNameDirector(String query) {
         return List.of();   // в этом хранилище метод не используется
     }
+
+    @Override
+    public Film delete(Film film) {
+        return null;    // в этом хранилище метод не используется
+    }
 }

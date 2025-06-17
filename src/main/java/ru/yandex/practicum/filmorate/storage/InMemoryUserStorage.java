@@ -59,4 +59,9 @@ public class InMemoryUserStorage implements UserStorage {
         user.getFriends().remove(friendId);
         friend.getFriends().remove(userId);
     }
+
+    @Override
+    public User delete(User user) {
+        return null;    // в этом хранилище метод не используется
+    }
 }

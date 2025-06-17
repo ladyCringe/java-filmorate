@@ -60,7 +60,8 @@ public class UserController {
 
     @GetMapping("/{userId}/friends")
     public List<User> getFriends(@PathVariable int userId) {
-        log.info("Display a list of all friends {} of user {}", userService.getAllUsers(), userId);
+        //log.info("Display a list of all friends {} of user {}", userService.getAllUsers(), userId);
+        log.info("Запрошены друзья пользователя с id {}", userId);
         return userService.getFriends(userId);
     }
 
@@ -73,5 +74,15 @@ public class UserController {
     @GetMapping("/{id}/recommendations")
     public Collection<Film> getFilmsRecommendations(@PathVariable int id) {
         return recommendationsService.getFilmsRecommendations(id);
+    }
+
+    @DeleteMapping("/{userId}")
+    public User delete(@PathVariable(name = "userId") Integer userIdRequest) {
+        return userService.delete(userIdRequest);
+    }
+
+    @GetMapping("/{id}")
+    public User findById(@PathVariable(name = "id") Integer userId) {
+        return userService.getById(userId);
     }
 }

@@ -1,8 +1,14 @@
 package ru.yandex.practicum.filmorate.storage;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ServerException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -13,7 +19,28 @@ import java.util.List;
 
 @Repository
 public class UserDbStorage implements UserStorage {
+    private static final String DELETE_USER_IN_FRIENDS_QUERY = "DELETE FROM Friendships" +
+            " WHERE user_id = :user_id OR friend_id = :user_id;";
+    private static final String DELETE_USER_IN_LIKES_QUERY = "DELETE FROM likes" +
+            " WHERE user_id = :user_id;";
+    private static final String DELETE_USER_IN_FEED_QUERY = "DELETE FROM Feed" +
+            " WHERE user_id = :user_id;";
+    private static final String DELETE_USER_IN_REVIEW_LIKES = "DELETE FROM REVIEW_LIKES\n" +
+            "WHERE\n" +
+            "\t(user_id = :user_id)\t--удаляем оценки пользователя, которые он ставил отзывам\n" +
+            "\tOR\n" +
+            "\t(review_id IN\n" +
+            "\t\t(SELECT id FROM Reviews WHERE user_id = :user_id));\t--удаляем оценки отзывов, которые писал пользователь\n";
+    private static final String DELETE_USER_IN_REVIEWS = "DELETE FROM REVIEWS\n" +
+            "WHERE user_id = :user_id;\n";
+    private static final String DELETE_BY_ID_QUERY = "DELETE FROM users WHERE id = ?;";
+
+    private static final Logger log = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(UserDbStorage.class);
+
     private final JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    protected NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @Autowired
     public UserDbStorage(JdbcTemplate jdbcTemplate) {
@@ -104,6 +131,34 @@ public class UserDbStorage implements UserStorage {
 
         jdbcTemplate.update("UPDATE friendships SET confirmed = false WHERE user_id = ? AND friend_id = ?",
                 friendId, userId);
+    }
+
+    @Override
+    @Transactional
+    public User delete(User user) {
+        SqlParameterSource parameters = new MapSqlParameterSource("user_id", user.getId());
+
+        // удаляем данные о дружеских связях, в которых участвовал пользователь, из БД
+        namedParameterJdbcTemplate.update(DELETE_USER_IN_FRIENDS_QUERY, parameters);
+
+        // удаляем записи о лайках, которые пользователь ставил фильмам, из БД
+        namedParameterJdbcTemplate.update(DELETE_USER_IN_LIKES_QUERY, parameters);
+
+        // удаляем записи из таблицы Feed
+        namedParameterJdbcTemplate.update(DELETE_USER_IN_FEED_QUERY, parameters);
+
+        // удаляем записи из таблицы Review_Likes
+        namedParameterJdbcTemplate.update(DELETE_USER_IN_REVIEW_LIKES, parameters);
+
+        // удаляем записи из таблицы Reviews
+        namedParameterJdbcTemplate.update(DELETE_USER_IN_REVIEWS, parameters);
+
+        // удаляем пользователя из БД приложения
+        jdbcTemplate.update(DELETE_BY_ID_QUERY, user.getId());
+
+        log.info("Удален пользователь  id {}.", user.getId());
+
+        return user;
     }
 
     private boolean existsById(Integer id) {

@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -133,6 +134,14 @@ public class FilmDbStorage implements FilmStorage {
             "\tGROUP BY film_isLike.id) AS film_sumLike\n" +
             "ON film_sumLike.film_id = films.id\n" +
             "ORDER BY film_sumLike.sumLike DESC;\n";    //в задании сортировать по годам, в тестах обратный порядок
+    private static final String DELETE_FILM_IN_DIRECTORS_QUERY = "DELETE FROM film_director WHERE film_id = :film_id;";
+    private static final String DELETE_FILM_GENRES_QUERY = "DELETE FROM film_genres WHERE film_id = :film_id;";
+    private static final String DELETE_FILM_LIKES_QUERY = "DELETE FROM likes WHERE film_id = :film_id;";
+    private static final String DELETE_FILM_IN_REVIEWS_LIKES = "DELETE FROM REVIEW_LIKES\n" +
+            "WHERE review_id IN\n" +
+            "\t(SELECT id FROM Reviews WHERE film_id = :film_id);\t--удаляем оценки отзывов к фильму\n";
+    private static final String DELETE_FILM_IN_REVIEWS = "DELETE FROM REVIEWS WHERE film_id = :film_id;";
+    private static final String DELETE_FILM_QUERY = "DELETE FROM films WHERE id = :film_id;";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -509,5 +518,31 @@ public class FilmDbStorage implements FilmStorage {
             }
         }
         return likedFilms;
+    }
+
+    @Override
+    @Transactional
+    public Film delete(Film film) {
+        SqlParameterSource parameters = new MapSqlParameterSource("film_id", film.getId());
+
+        // удаляем данные о режиссерах фильма
+        namedParameterJdbcTemplate.update(DELETE_FILM_IN_DIRECTORS_QUERY, parameters);
+
+        // удаляем данные о жанрах фильма
+        namedParameterJdbcTemplate.update(DELETE_FILM_GENRES_QUERY, parameters);
+
+        // удаляем данные о лайках фильма
+        namedParameterJdbcTemplate.update(DELETE_FILM_LIKES_QUERY, parameters);
+
+        // удаляем данные об оценках к отзывам фильма
+        namedParameterJdbcTemplate.update(DELETE_FILM_IN_REVIEWS_LIKES, parameters);
+
+        // удаляем отзывы к фильму
+        namedParameterJdbcTemplate.update(DELETE_FILM_IN_REVIEWS, parameters);
+
+        // удаляем данные о фильме из БД.
+        namedParameterJdbcTemplate.update(DELETE_FILM_QUERY, parameters);
+
+        return film;
     }
 }
