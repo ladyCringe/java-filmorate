@@ -108,6 +108,13 @@ public class FilmService {
         if (count != null && count < 0) {
             throw new ServerException("If not null film count should be greater than 0");
         }
+
+        if (year != null) {
+            if (year < 1895) throw new ValidationException("Год выпуска фильма не может быть меньше 1895 г.");
+            else if (year > LocalDate.now().getYear())
+                throw new ValidationException("Год выпуска фильма не может быть больше текущего года.");
+        }
+
         return filmStorage.getPopularFilms(count, genreId, year);
     }
 
