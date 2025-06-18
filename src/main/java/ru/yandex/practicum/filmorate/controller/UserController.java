@@ -60,7 +60,6 @@ public class UserController {
 
     @GetMapping("/{userId}/friends")
     public List<User> getFriends(@PathVariable int userId) {
-        //log.info("Display a list of all friends {} of user {}", userService.getAllUsers(), userId);
         log.info("Запрошены друзья пользователя с id {}", userId);
         return userService.getFriends(userId);
     }
