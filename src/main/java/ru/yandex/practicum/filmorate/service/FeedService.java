@@ -2,9 +2,10 @@ package ru.yandex.practicum.filmorate.service;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.model.EventType;
+import ru.yandex.practicum.filmorate.model.FeedEvent;
+import ru.yandex.practicum.filmorate.model.Operation;
 import ru.yandex.practicum.filmorate.storage.FeedStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -29,7 +30,6 @@ public class FeedService {
     }
 
     public List<FeedEvent> getFeedByUserId(int userId) {
-        checkExistence(userId);
         return feedStorage.getFeedByUserId(userId);
     }
 
@@ -44,12 +44,6 @@ public class FeedService {
         if (!(event.getOperation().equals(Operation.ADD) || event.getOperation().equals(Operation.UPDATE)
                 || event.getOperation().equals(Operation.REMOVE))) {
             throw new ValidationException("Operation is incorrect");
-        }
-    }
-
-    private void checkExistence(Integer userId) {
-        if (userStorage.getUserById(userId) == null) {
-            throw new NotFoundException("User with id = " + userId + " was not found");
         }
     }
 }
