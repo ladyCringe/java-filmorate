@@ -68,23 +68,32 @@ public class FilmController {
 
     @GetMapping("/common")
     public List<Film> getCommonFilms(@RequestParam("userId") int userId, @RequestParam("friendId") int friendId) {
+        log.info("Поступил запрос на получение общих фильмов у пользователей с id {}.",
+                String.valueOf(userId) + "," + String.valueOf(friendId));
+
         return filmService.getCommonFilms(userId, friendId);
     }
 
     @GetMapping("/director/{directorId}")
     public List<Film> getFilmsByDirector(@PathVariable Long directorId,
                                          @RequestParam(name = "sortBy", defaultValue = "year") String sort) {
+        log.info("Поступил запрос на получение фильмов режиссера с id {} сортировкой по {}", directorId, sort);
+
         return filmService.getFilmsByDirector(directorId, sort);
     }
 
     @GetMapping("/search")
     public List<Film> getFilmsBySearch(@RequestParam(name = "query") String query,
                                        @RequestParam(name = "by") String by) {
+        log.info("Поступил запрос на поиск фильмов по вхождению {} в {}.", query, by);
+
         return filmService.getFilmsBySearch(query, by);
     }
 
     @DeleteMapping("/{filmId}")
     public Film delete(@PathVariable(name = "filmId") Integer filmIdRequest) {
+        log.info("Поступил запрос на удаление фильма с id {}.", filmIdRequest);
+
         return filmService.delete(filmIdRequest);
     }
 }

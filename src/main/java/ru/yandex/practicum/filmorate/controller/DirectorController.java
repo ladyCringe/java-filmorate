@@ -32,6 +32,7 @@ public class DirectorController {
     public DirectorDto add(@RequestBody @Valid NewDirectorRequest directorRequest) {
         // проверку выполнения необходимых условий осуществил через валидацию полей
         // обработчик выполняется после успешной валидации полей
+        log.info("Поступил запрос на добавление режиссера {}.", directorRequest);
 
         return directorService.add(directorRequest);
     }
@@ -41,6 +42,7 @@ public class DirectorController {
     public DirectorDto update(@RequestBody @Valid UpdateDirectorRequest directorRequest) {
         // проверку выполнения необходимых условий осуществил через валидацию полей
         // обработчик выполняется после успешной валидации полей
+        log.info("Поступил запрос на обновление режиссера {}.", directorRequest);
 
         return directorService.update(directorRequest);
     }
@@ -50,17 +52,22 @@ public class DirectorController {
     public DirectorDto delete(@PathVariable(name = "id") Long directorId) {
         // проверку выполнения необходимых условий осуществил через валидацию полей
         // обработчик выполняется после успешной валидации полей
+        log.info("Поступил запрос на удаление режиссера с id {}.", directorId);
 
         return directorService.delete(directorId);
     }
 
     @GetMapping("/{id}")
     public DirectorDto findById(@PathVariable(name = "id") Long directorId) {
+        log.info("Поступил запрос на получение данных по режиссеру с id {}.", directorId);
+
         return directorService.getByIdDirectorDto(directorId);
     }
 
     @GetMapping
     public Collection<DirectorDto> findAll() {
+        log.info("Поступил запрос на получение данных по всем режиссерам.");
+
         return directorService.findAll();
     }
 }

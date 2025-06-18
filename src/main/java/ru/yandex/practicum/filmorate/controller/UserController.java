@@ -73,16 +73,22 @@ public class UserController {
 
     @GetMapping("/{id}/recommendations")
     public Collection<Film> getFilmsRecommendations(@PathVariable int id) {
+        log.info("Поступил запрос на получение рекомендаций пользователя с id {}.", id);
+
         return recommendationsService.getFilmsRecommendations(id);
     }
 
     @DeleteMapping("/{userId}")
     public User delete(@PathVariable(name = "userId") Integer userIdRequest) {
+        log.info("Поступил запрос на удаление данных пользователя с id {}.", userIdRequest);
+
         return userService.delete(userIdRequest);
     }
 
     @GetMapping("/{id}")
     public User getUserById(@PathVariable(name = "id") Integer userId) {
+        log.info("Поступил запрос на получение данных пользователя с id {}.", userId);
+
         return userService.getUserById(userId);
     }
 }
