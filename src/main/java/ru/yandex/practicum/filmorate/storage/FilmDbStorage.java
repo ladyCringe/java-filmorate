@@ -14,6 +14,7 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MpaRating;
+import ru.yandex.practicum.filmorate.storage.extractors.FilmsResultSetExtractor;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,9 +24,57 @@ import java.util.*;
 @Slf4j
 @Repository
 public class FilmDbStorage implements FilmStorage {
+    private static final String TOP_PART_QUERY_FILMS = "SELECT\n" +
+            "tt_f.ID AS f_id,\n" +
+            "tt_f.NAME AS f_name,\n" +
+            "tt_f.DESCRIPTION AS f_description,\n" +
+            "tt_f.RELEASE_DATE AS f_release_date,\n" +
+            "tt_f.DURATION AS f_duration,\n" +
+            "tt_f.MPA_ID AS mpa_id,\n" +
+            "tt_mr.NAME AS mr_name,\n" +
+            "tt_d.ID AS director_id,\n" +
+            "tt_d.NAME AS director_name,\n" +
+            "tt_l.USER_ID AS likes_user_id,\n" +
+            "tt_fg.GENRE_ID AS genre_id,\n" +
+            "tt_g.NAME AS genre_name\n";
+    private static final String TABLE_PARTS_QUERY_FILMS = "\n" +
+            "LEFT JOIN MPA_RATINGS tt_mr ON tt_mr.ID = tt_f.MPA_ID\n" +
+            "LEFT JOIN DIRECTORS tt_d ON tt_d.ID = tt_fd.DIRECTOR_ID\n" +
+            "LEFT JOIN LIKES tt_l ON tt_l.FILM_ID = tt_f.ID\n" +
+            "LEFT JOIN FILM_GENRES tt_fg ON tt_fg.FILM_ID = tt_f.ID\n" +
+            "LEFT JOIN GENRES tt_g ON tt_g.ID = tt_fg.GENRE_ID\n";
+    private static final String FIND_BY_DIRECTOR_SORT_BY_YEAR = TOP_PART_QUERY_FILMS +
+            "FROM FILMS tt_f\n" +
+            "INNER JOIN FILM_DIRECTOR tt_fd ON tt_fd.FILM_ID  = tt_f.ID AND tt_fd.director_id = :director_id\n" +
+            TABLE_PARTS_QUERY_FILMS +
+            "ORDER BY\n" +
+            "tt_f.RELEASE_DATE,\n" +
+            "tt_f.ID;\n";
+    private static final String FIND_BY_DIRECTOR_SORT_BY_LIKES = "--запрос с несколькими with не сработал в jdbc\n" +
+            TOP_PART_QUERY_FILMS +
+            "FROM films tt_f\n" +
+            "INNER JOIN\n" +
+            "(\n" +
+            "\tSELECT film_isLike.id AS film_id, sum(film_isLike.isLike) AS sumLike\n" +
+            "\tFROM\n" +
+            "\t(\n" +
+            "\t\tSELECT f.id,\n" +
+            "\t\t\tCASE\n" +
+            "\t\t\t\tWHEN l.film_id IS NULL THEN 0\n" +
+            "\t\t\t\tELSE 1\n" +
+            "\t\t\tEND AS isLike\n" +
+            "\t\tFROM FILMS f\n" +
+            "\t\tINNER JOIN FILM_DIRECTOR fd ON fd.film_id = f.id AND fd.director_id = :director_id\n" +
+            "\t\tLEFT JOIN LIKES l ON l.film_id = f.id\n" +
+            "\t) AS film_isLike\n" +
+            "\tGROUP BY film_isLike.id) AS film_sumLike\n" +
+            "ON film_sumLike.film_id = tt_f.id\n" +
+            "LEFT JOIN FILM_DIRECTOR tt_fd ON tt_fd.film_id = tt_f.id\n" +
+            TABLE_PARTS_QUERY_FILMS +
+            "ORDER BY film_sumLike.sumLike DESC;\n";    //в задании сортировать по годам, в тестах обратный порядок
     private static final String FIND_BY_SEARCH_IN_TITLE = "--запрос с несколькими with не сработал в jdbc\n" +
-            "SELECT *\n" +
-            "FROM films\n" +
+            TOP_PART_QUERY_FILMS +
+            "FROM films tt_f\n" +
             "INNER JOIN\n" +
             "(\n" +
             "\tSELECT film_isLike.film_id AS film_id, sum(film_isLike.isLike) AS sumLike\n" +
@@ -46,11 +95,13 @@ public class FilmDbStorage implements FilmStorage {
             "\t) AS film_isLike\n" +
             "\tGROUP BY film_isLike.film_id\n" +
             ") AS film_sumLike\n" +
-            "ON film_sumLike.film_id = films.id\n" +
+            "ON film_sumLike.film_id = tt_f.id\n" +
+            "LEFT JOIN FILM_DIRECTOR tt_fd ON tt_fd.film_id = tt_f.id\n" +
+            TABLE_PARTS_QUERY_FILMS +
             "ORDER BY film_sumLike.sumLike DESC;\n";
     private static final String FIND_BY_SEARCH_IN_DIRECTOR_NAME = "--запрос с несколькими with не сработал в jdbc\n" +
-            "SELECT *\n" +
-            "FROM films\n" +
+            TOP_PART_QUERY_FILMS +
+            "FROM films tt_f\n" +
             "INNER JOIN\n" +
             "(\n" +
             "\tSELECT film_isLike.film_id AS film_id, sum(film_isLike.isLike) AS sumLike\n" +
@@ -72,11 +123,13 @@ public class FilmDbStorage implements FilmStorage {
             "\t) AS film_isLike\n" +
             "\tGROUP BY film_isLike.film_id\n" +
             ") AS film_sumLike\n" +
-            "ON film_sumLike.film_id = films.id\n" +
+            "ON film_sumLike.film_id = tt_f.id\n" +
+            "LEFT JOIN FILM_DIRECTOR tt_fd ON tt_fd.film_id = tt_f.id\n" +
+            TABLE_PARTS_QUERY_FILMS +
             "ORDER BY film_sumLike.sumLike DESC;\n";
     private static final String FIND_BY_SEARCH_IN_TITLE_AND_DIRECTOR_NAME = "--запрос с несколькими with не сработал в jdbc\n" +
-            "SELECT *\n" +
-            "FROM films\n" +
+            TOP_PART_QUERY_FILMS +
+            "FROM films tt_f\n" +
             "INNER JOIN\n" +
             "(\n" +
             "\tSELECT film_isLike.film_id AS film_id, sum(film_isLike.isLike) AS sumLike\n" +
@@ -112,28 +165,10 @@ public class FilmDbStorage implements FilmStorage {
             "\t) AS film_isLike\n" +
             "\tGROUP BY film_isLike.film_id\n" +
             ") AS film_sumLike\n" +
-            "ON film_sumLike.film_id = films.id\n" +
+            "ON film_sumLike.film_id = tt_f.id\n" +
+            "LEFT JOIN FILM_DIRECTOR tt_fd ON tt_fd.film_id = tt_f.id\n" +
+            TABLE_PARTS_QUERY_FILMS +
             "ORDER BY film_sumLike.sumLike DESC;\n";
-    private static final String FIND_BY_DIRECTOR_SORT_BY_LIKES = "--запрос с несколькими with не сработал в jdbc\n" +
-            "SELECT *\n" +
-            "FROM films\n" +
-            "INNER JOIN\n" +
-            "(\n" +
-            "\tSELECT film_isLike.id AS film_id, sum(film_isLike.isLike) AS sumLike\n" +
-            "\tFROM\n" +
-            "\t(\n" +
-            "\t\tSELECT f.id,\n" +
-            "\t\t\tCASE\n" +
-            "\t\t\t\tWHEN l.film_id IS NULL THEN 0\n" +
-            "\t\t\t\tELSE 1\n" +
-            "\t\t\tEND AS isLike\n" +
-            "\t\tFROM FILMS f\n" +
-            "\t\tINNER JOIN FILM_DIRECTOR fd ON fd.film_id = f.id AND fd.director_id = ?\n" +
-            "\t\tLEFT JOIN LIKES l ON l.film_id = f.id\n" +
-            "\t) AS film_isLike\n" +
-            "\tGROUP BY film_isLike.id) AS film_sumLike\n" +
-            "ON film_sumLike.film_id = films.id\n" +
-            "ORDER BY film_sumLike.sumLike DESC;\n";    //в задании сортировать по годам, в тестах обратный порядок
     private static final String DELETE_FILM_IN_DIRECTORS_QUERY = "DELETE FROM film_director WHERE film_id = :film_id;";
     private static final String DELETE_FILM_GENRES_QUERY = "DELETE FROM film_genres WHERE film_id = :film_id;";
     private static final String DELETE_FILM_LIKES_QUERY = "DELETE FROM likes WHERE film_id = :film_id;";
@@ -142,6 +177,22 @@ public class FilmDbStorage implements FilmStorage {
             "\t(SELECT id FROM Reviews WHERE film_id = :film_id);\t--удаляем оценки отзывов к фильму\n";
     private static final String DELETE_FILM_IN_REVIEWS = "DELETE FROM REVIEWS WHERE film_id = :film_id;";
     private static final String DELETE_FILM_QUERY = "DELETE FROM films WHERE id = :film_id;";
+    private static final String FIND_COMMON = "\n" +
+            TOP_PART_QUERY_FILMS +
+            "FROM films tt_f\n" +
+            "INNER JOIN\n" +
+            "(\n" +
+            "SELECT f.id,\n" +
+            "COUNT(DISTINCT fl.user_id) AS popularity\n" +
+            "FROM films f\n" +
+            "JOIN likes fl ON f.id = fl.film_id\n" +
+            "WHERE fl.user_id IN (?, ?)\n" +
+            "GROUP BY f.id\n" +
+            "HAVING COUNT(DISTINCT fl.user_id) = 2) AS filmPopularity\n" +
+            "ON filmPopularity.id = tt_f.id\n" +
+            "LEFT JOIN FILM_DIRECTOR tt_fd ON tt_fd.film_id = tt_f.id\n" +
+            TABLE_PARTS_QUERY_FILMS +
+            "ORDER BY popularity DESC\n";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -150,6 +201,9 @@ public class FilmDbStorage implements FilmStorage {
 
     @Autowired
     private DirectorDbStorage directorDbStorage;
+
+    @Autowired
+    FilmsResultSetExtractor filmsResultSetExtractor;
 
     @Autowired
     public FilmDbStorage(JdbcTemplate jdbcTemplate) {
@@ -294,18 +348,20 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getFilmsByDirectorSortByYear(Director director) {
-        final String query = "SELECT * FROM FILMS f" +
-                " INNER JOIN FILM_DIRECTOR fd ON f.id = fd.film_id AND fd.director_id = ?" +
-                " ORDER BY f.RELEASE_DATE;";
+        log.info("Запрошены фильмы по режиссеру {} с сортировкой по году выпуска.", director);
 
-        return jdbcTemplate.query(query, this::mapRowToFilm, director.getId());
+        SqlParameterSource parameters = new MapSqlParameterSource("director_id", director.getId());
+
+        return namedParameterJdbcTemplate.query(FIND_BY_DIRECTOR_SORT_BY_YEAR, parameters, filmsResultSetExtractor);
     }
 
     @Override
     public List<Film> getFilmsByDirectorSortByLikes(Director director) {
-        log.info("Запрошены фильмы по режиссеру {}.", director);
+        log.info("Запрошены фильмы по режиссеру {} с сортировкой по лайкам (убывание).", director);
 
-        return jdbcTemplate.query(FIND_BY_DIRECTOR_SORT_BY_LIKES, this::mapRowToFilm, director.getId());
+        SqlParameterSource parameters = new MapSqlParameterSource("director_id", director.getId());
+
+        return namedParameterJdbcTemplate.query(FIND_BY_DIRECTOR_SORT_BY_LIKES, parameters, filmsResultSetExtractor);
     }
 
     @Override
@@ -314,7 +370,7 @@ public class FilmDbStorage implements FilmStorage {
 
         SqlParameterSource parameters = new MapSqlParameterSource("searchQuery", query);
 
-        return namedParameterJdbcTemplate.query(FIND_BY_SEARCH_IN_TITLE, parameters, this::mapRowToFilm);
+        return namedParameterJdbcTemplate.query(FIND_BY_SEARCH_IN_TITLE, parameters, filmsResultSetExtractor);
     }
 
     @Override
@@ -323,7 +379,7 @@ public class FilmDbStorage implements FilmStorage {
 
         SqlParameterSource parameters = new MapSqlParameterSource("searchQuery", query);
 
-        return namedParameterJdbcTemplate.query(FIND_BY_SEARCH_IN_DIRECTOR_NAME, parameters, this::mapRowToFilm);
+        return namedParameterJdbcTemplate.query(FIND_BY_SEARCH_IN_DIRECTOR_NAME, parameters, filmsResultSetExtractor);
     }
 
     @Override
@@ -332,7 +388,7 @@ public class FilmDbStorage implements FilmStorage {
 
         SqlParameterSource parameters = new MapSqlParameterSource("searchQuery", query);
 
-        return namedParameterJdbcTemplate.query(FIND_BY_SEARCH_IN_TITLE_AND_DIRECTOR_NAME, parameters, this::mapRowToFilm);
+        return namedParameterJdbcTemplate.query(FIND_BY_SEARCH_IN_TITLE_AND_DIRECTOR_NAME, parameters, filmsResultSetExtractor);
     }
 
     @Override
@@ -498,15 +554,7 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getCommonFilms(int userId, int friendId) {
-        String sql = "SELECT f.*, COUNT(DISTINCT fl.user_id) AS popularity " +
-                "FROM films f " +
-                "JOIN likes fl ON f.id = fl.film_id " +
-                "WHERE fl.user_id IN (?, ?) " +
-                "GROUP BY f.id " +
-                "HAVING COUNT(DISTINCT fl.user_id) = 2 " +
-                "ORDER BY popularity DESC";
-
-        return jdbcTemplate.query(sql, this::mapRowToFilm, userId, friendId);
+        return jdbcTemplate.query(FIND_COMMON, filmsResultSetExtractor, userId, friendId);
     }
 
     public Collection<Film> getLikedFilms(int userId) {
