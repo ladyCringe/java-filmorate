@@ -30,13 +30,16 @@ public class DirectorService {
     }
 
     public Director delete(Long directorId) {
-        Director removeDirector = directorDbStorage.getById(directorId)
-                .orElseThrow(() -> new NotFoundException("Режиссер с id = " + directorId + " не найден."));
+        Director removeDirector = getByIdDirector(directorId);
 
         return directorDbStorage.delete(removeDirector);
     }
 
     public Director getById(Long id) {
+        return getByIdDirector(id);
+    }
+
+    private Director getByIdDirector(Long id) {
         return directorDbStorage.getById(id)
                 .orElseThrow(() -> new NotFoundException("Директор с id = " + id + " не найден."));
     }
