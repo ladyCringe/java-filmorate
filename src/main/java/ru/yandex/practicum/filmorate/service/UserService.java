@@ -102,11 +102,7 @@ public class UserService {
     }
 
     public User getUserById(int id) {
-        User user = userStorage.getUserById(id);
-        if (user == null) {
-            throw new NotFoundException("User with id " + id + " not found");
-        }
-        return user;
+        return userStorage.getUserById(id);
     }
 
     private void checkUser(int userId) {

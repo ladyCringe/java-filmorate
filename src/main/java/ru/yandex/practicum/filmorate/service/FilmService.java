@@ -80,27 +80,27 @@ public class FilmService {
     }
 
     public void addLike(int filmId, int userId) {
-        checkExistence(userId);
+        User user = userService.getUserById(userId);
         Film film = getFilmById(filmId);
-        if (film.getLikes().contains(userId)) {
+        if (film.getLikes().contains(user.getId())) {
             feedService.addEvent(new FeedEvent(null, null, userId,
                     EventType.LIKE, Operation.ADD, filmId));
             return;
         }
-        filmStorage.addLike(filmId, userId);
-        feedService.addEvent(new FeedEvent(null, null, userId,
+        filmStorage.addLike(filmId, user.getId());
+        feedService.addEvent(new FeedEvent(null, null, user.getId(),
                 EventType.LIKE, Operation.ADD, filmId));
     }
 
     public void removeLike(int filmId, int userId) {
-        checkExistence(userId);
+        User user = userService.getUserById(userId);
         Film film = getFilmById(filmId);
-        if (!film.getLikes().contains(userId)) {
+        if (!film.getLikes().contains(user.getId())) {
             throw new NotFoundException("Like by user with id" + userId +
                     " for film with filmId" + filmId + " was not found");
         }
-        filmStorage.removeLike(filmId, userId);
-        feedService.addEvent(new FeedEvent(null, null, userId,
+        filmStorage.removeLike(filmId, user.getId());
+        feedService.addEvent(new FeedEvent(null, null, user.getId(),
                 EventType.LIKE, Operation.REMOVE, filmId));
     }
 
@@ -119,11 +119,7 @@ public class FilmService {
     }
 
     public Film getFilmById(int id) {
-        Film film = filmStorage.getFilmById(id);
-        if (film == null) {
-            throw new NotFoundException("Film with id " + id + " not found");
-        }
-        return film;
+        return filmStorage.getFilmById(id);
     }
 
     public Film delete(Integer filmIdRequest) {
@@ -132,12 +128,6 @@ public class FilmService {
         removeFilm = filmStorage.delete(removeFilm);
 
         return removeFilm;
-    }
-
-    private void checkExistence(Integer userId) {
-        if (userService.getUserById(userId) == null) {
-            throw new NotFoundException("User with id = " + userId + " was not found");
-        }
     }
 
     public List<Film> getCommonFilms(int userId, int friendId) {

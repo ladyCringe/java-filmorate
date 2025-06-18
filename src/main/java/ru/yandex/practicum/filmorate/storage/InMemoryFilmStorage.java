@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.storage;
 
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.PathVariable;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -71,6 +72,11 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     @Override
     public Collection<Film> getLikedFilms(int userId) {
+        return List.of();
+    }
+
+    @Override
+    public Collection<Film> getFilmsRecommendations(@PathVariable int userId) {
         return List.of();
     }
 

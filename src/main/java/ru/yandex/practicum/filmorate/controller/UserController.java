@@ -70,11 +70,10 @@ public class UserController {
         return userService.getCommonFriends(userId, friendId);
     }
 
-    @GetMapping("/{id}/recommendations")
-    public Collection<Film> getFilmsRecommendations(@PathVariable int id) {
-        log.info("Поступил запрос на получение рекомендаций пользователя с id {}.", id);
-
-        return recommendationsService.getFilmsRecommendations(id);
+    @GetMapping("/{userId}/recommendations")
+    public Collection<Film> getFilmsRecommendations(@PathVariable int userId) {
+        log.info("Display a list of recommendations for user with id {}", userId);
+        return recommendationsService.getFilmsRecommendations(userId);
     }
 
     @DeleteMapping("/{userId}")

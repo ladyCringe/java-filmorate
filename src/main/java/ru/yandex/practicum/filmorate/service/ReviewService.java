@@ -50,18 +50,13 @@ public class ReviewService {
 
     public void deleteReview(int id) {
         Review review = getReviewById(id);
-        validateReview(review);
         reviewStorage.deleteReview(id);
         feedService.addEvent(new FeedEvent(null, null,
                 review.getUserId(), EventType.REVIEW, Operation.REMOVE, id));
     }
 
     public Review getReviewById(int id) {
-        Review review = reviewStorage.getReviewById(id);
-        if (review == null) {
-            throw new NotFoundException("review with id " + id + " not found");
-        }
-        return review;
+        return reviewStorage.getReviewById(id);
     }
 
     public List<Review> getAllReviews(Integer filmId, int count) {
@@ -69,38 +64,38 @@ public class ReviewService {
     }
 
     public void addLike(int reviewId, int userId) {
-        validateReview(getReviewById(reviewId));
+        Review review = getReviewById(reviewId);
         checkUserExists(userId);
-        reviewStorage.addLike(reviewId, userId);
+        reviewStorage.addLike(review.getReviewId(), userId);
     }
 
     public void addDislike(int reviewId, int userId) {
-        validateReview(getReviewById(reviewId));
+        Review review = getReviewById(reviewId);
         checkUserExists(userId);
-        reviewStorage.addDislike(reviewId, userId);
+        reviewStorage.addDislike(review.getReviewId(), userId);
     }
 
     public void removeLike(int reviewId, int userId) {
-        validateReview(getReviewById(reviewId));
+        Review review = getReviewById(reviewId);
         checkUserExists(userId);
-        reviewStorage.removeLike(reviewId, userId);
+        reviewStorage.removeLike(review.getReviewId(), userId);
     }
 
     public void removeDislike(int reviewId, int userId) {
-        validateReview(getReviewById(reviewId));
+        Review review = getReviewById(reviewId);
         checkUserExists(userId);
-        reviewStorage.removeDislike(reviewId, userId);
+        reviewStorage.removeDislike(review.getReviewId(), userId);
     }
 
     private void validateReview(Review review) {
         if (review.getUserId() == null) {
-            throw new ValidationException("User with id " + review.getUserId() + " not found");
+            throw new ValidationException("User not found");
         }
         if (userStorage.getUserById(review.getUserId()) == null) {
             throw new ValidationException("User with id " + review.getUserId() + " not found");
         }
         if (review.getFilmId() == null) {
-            throw new ValidationException("Film with id " + review.getFilmId() + " not found");
+            throw new ValidationException("Film not found");
         }
         if (filmStorage.getFilmById(review.getFilmId()) == null) {
             throw new ValidationException("Film with id " + review.getFilmId() + " not found");

@@ -30,7 +30,7 @@ public class FeedService {
     }
 
     public List<FeedEvent> getFeedByUserId(int userId) {
-        return feedStorage.getFeedByUserId(userId);
+        return feedStorage.getFeedByUserId(userStorage.getUserById(userId).getId());
     }
 
     private void validate(FeedEvent event) {

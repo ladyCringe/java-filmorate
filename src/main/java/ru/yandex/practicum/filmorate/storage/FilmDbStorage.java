@@ -347,6 +347,40 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
+    public Collection<Film> getFilmsRecommendations(int userId) {
+        String sql = """
+        SELECT f.*
+        FROM films f
+        JOIN (
+            SELECT l.film_id
+            FROM likes l
+            JOIN (
+                SELECT l.user_id
+                FROM likes l
+                JOIN (
+                    SELECT film_id
+                    FROM likes
+                    WHERE user_id = ?
+                ) ulf ON l.film_id = ulf.film_id
+                WHERE l.user_id <> ?
+                GROUP BY l.user_id
+                ORDER BY COUNT(*) DESC
+                LIMIT 1
+            ) su ON l.user_id = su.user_id
+            WHERE l.film_id NOT IN (
+                SELECT film_id
+                FROM likes
+                WHERE user_id = ?
+            )
+        ) recommended_film_ids ON f.id = recommended_film_ids.film_id;
+        """;
+
+        log.info("searching for recommendations for user with id = {}", userId);
+
+        return jdbcTemplate.query(sql, this::mapRowToFilm, userId, userId, userId);
+    }
+
+    @Override
     public List<Film> getFilmsByDirectorSortByYear(Director director) {
         log.info("Запрошены фильмы по режиссеру {} с сортировкой по году выпуска.", director);
 
@@ -490,6 +524,7 @@ public class FilmDbStorage implements FilmStorage {
 
     private Film mapRowToFilm(ResultSet rs, int rowNum) throws SQLException {
         Film film = new Film();
+        log.info("setting id");
         film.setId(rs.getInt("id"));
         film.setName(rs.getString("name"));
         film.setDescription(rs.getString("description"));

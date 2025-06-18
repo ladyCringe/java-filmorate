@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.storage.DirectorDbStorage;
 import ru.yandex.practicum.filmorate.storage.FilmDbStorage;
+import ru.yandex.practicum.filmorate.storage.extractors.FilmsResultSetExtractor;
 import ru.yandex.practicum.filmorate.storage.mappers.DirectorRowMapper;
 
 import java.time.LocalDate;
@@ -25,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @Import({FilmDbStorage.class,
         DirectorDbStorage.class,
-        DirectorRowMapper.class})
+        DirectorRowMapper.class, FilmsResultSetExtractor.class})
 class FilmDbStorageTest {
 
     @Autowired
@@ -47,7 +48,7 @@ class FilmDbStorageTest {
         Film result = filmStorage.getFilmById(loaded.getId());
         assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("Interstellar");
-        assertThat(result.getId()).isEqualTo(5);
+        assertThat(result.getId()).isEqualTo(loaded.getId());
         assertThat(result.getMpa().getId()).isEqualTo(1);
         assertThat(result.getGenres()).hasSize(1);
     }
