@@ -4,6 +4,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.EventType;
+import ru.yandex.practicum.filmorate.model.FeedEvent;
+import ru.yandex.practicum.filmorate.model.Operation;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -16,9 +19,12 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserStorage userStorage;
+    private final FeedService feedService;
 
-    public UserService(@Qualifier(value = "userDbStorage") UserStorage userStorage) {
+    public UserService(@Qualifier(value = "userDbStorage") UserStorage userStorage,
+                       @Qualifier(value = "feedService") FeedService feedService) {
         this.userStorage = userStorage;
+        this.feedService = feedService;
     }
 
     public User createUser(User user) {
@@ -41,12 +47,16 @@ public class UserService {
         checkUser(userId);
         checkUser(friendId);
         userStorage.addFriend(userId, friendId);
+        feedService.addEvent(new FeedEvent(null, null, userId,
+                EventType.FRIEND, Operation.ADD, friendId));
     }
 
     public void removeFriend(int userId, int friendId) {
         checkUser(userId);
         checkUser(friendId);
         userStorage.removeFriend(userId, friendId);
+        feedService.addEvent(new FeedEvent(null, null, userId,
+                EventType.FRIEND, Operation.REMOVE, friendId));
     }
 
     public List<User> getFriends(int userId) {
@@ -63,6 +73,14 @@ public class UserService {
                 .filter(other.getFriends()::contains)
                 .map(this::getUserById)
                 .collect(Collectors.toList());
+    }
+
+    public User delete(Integer userIdRequest) {
+        User removeUser = userStorage.getUserById(userIdRequest);
+
+        removeUser = userStorage.delete(removeUser);
+
+        return removeUser;
     }
 
     private void validate(User user) {
@@ -83,12 +101,8 @@ public class UserService {
         }
     }
 
-    private User getUserById(int id) {
-        User user = userStorage.getUserById(id);
-        if (user == null) {
-            throw new NotFoundException("User with id " + id + " not found");
-        }
-        return user;
+    public User getUserById(int id) {
+        return userStorage.getUserById(id);
     }
 
     private void checkUser(int userId) {

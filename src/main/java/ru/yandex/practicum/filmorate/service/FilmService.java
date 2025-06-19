@@ -1,26 +1,33 @@
 package ru.yandex.practicum.filmorate.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ServerException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 
 @Service
 public class FilmService {
     private final FilmStorage filmStorage;
-    private final UserStorage userStorage;
+    private final UserService userService;
+    private final FeedService feedService;
+
+    @Autowired
+    private DirectorService directorService;
 
     public FilmService(@Qualifier(value = "filmDbStorage") FilmStorage filmStorage,
-                       @Qualifier(value = "userDbStorage") UserStorage userStorage) {
+                       @Qualifier(value = "userService") UserService userService,
+                       @Qualifier(value = "feedService") FeedService feedService) {
         this.filmStorage = filmStorage;
-        this.userStorage = userStorage;
+        this.userService = userService;
+        this.feedService = feedService;
     }
 
     public Film createFilm(Film film) {
@@ -35,6 +42,23 @@ public class FilmService {
 
     public List<Film> getAllFilms() {
         return filmStorage.getAllFilms();
+    }
+
+    public List<Film> getFilmsByDirector(Long directorId, String sort) {
+        Director director = directorService.getById(directorId);
+
+        if (sort.equals("year")) return filmStorage.getFilmsByDirectorSortByYear(director);
+        else if (sort.equals("likes")) return filmStorage.getFilmsByDirectorSortByLikes(director);
+        else throw new ValidationException("Не верное значение параметра сортировки при получении фильмов режиссера.");
+    }
+
+    public List<Film> getFilmsBySearch(String query, String by) {
+        if (by.equals("director")) return filmStorage.getFilmsBySearchInNameDirector(query);
+        else if (by.equals("title")) return filmStorage.getFilmsBySearchInTitle(query);
+        else if (by.equals("director,title") || by.equals("title,director"))
+            return filmStorage.getFilmsBySearchInTitleAndNameDirector(query);
+        else
+            throw new ValidationException("Не верное значение параметра поиска фильма по наименованию и/или режиссеру.");
     }
 
     private void validate(Film film) {
@@ -56,42 +80,63 @@ public class FilmService {
     }
 
     public void addLike(int filmId, int userId) {
-        checkExistence(userId);
+        User user = userService.getUserById(userId);
         Film film = getFilmById(filmId);
-        if (film.getLikes().contains(userId)) {
-            throw new ServerException("Film with id " + filmId + " already liked by user " + userId);
+        if (film.getLikes().contains(user.getId())) {
+            feedService.addEvent(new FeedEvent(null, null, userId,
+                    EventType.LIKE, Operation.ADD, filmId));
+            return;
         }
-        filmStorage.addLike(filmId, userId);
+        filmStorage.addLike(filmId, user.getId());
+        feedService.addEvent(new FeedEvent(null, null, user.getId(),
+                EventType.LIKE, Operation.ADD, filmId));
     }
 
     public void removeLike(int filmId, int userId) {
-        checkExistence(userId);
+        User user = userService.getUserById(userId);
         Film film = getFilmById(filmId);
-        if (!film.getLikes().contains(userId)) {
+        if (!film.getLikes().contains(user.getId())) {
             throw new NotFoundException("Like by user with id" + userId +
                     " for film with filmId" + filmId + " was not found");
         }
-        filmStorage.removeLike(filmId, userId);
+        filmStorage.removeLike(filmId, user.getId());
+        feedService.addEvent(new FeedEvent(null, null, user.getId(),
+                EventType.LIKE, Operation.REMOVE, filmId));
     }
 
-    public List<Film> getPopularFilms(int count) {
-        if (count < 0) {
-            throw new ServerException("Film count should be greater than 0");
+    public List<Film> getPopularFilms(Integer count, Integer genreId, Integer year) {
+        if (count != null && count < 0) {
+            throw new ServerException("If not null film count should be greater than 0");
         }
-        return filmStorage.getPopularFilms(count);
+
+        if (year != null) {
+            if (year < 1895) throw new ValidationException("Год выпуска фильма не может быть меньше 1895 г.");
+            else if (year > LocalDate.now().getYear())
+                throw new ValidationException("Год выпуска фильма не может быть больше текущего года.");
+        }
+
+        return filmStorage.getPopularFilms(count, genreId, year);
     }
 
     public Film getFilmById(int id) {
-        Film film = filmStorage.getFilmById(id);
-        if (film == null) {
-            throw new NotFoundException("Film with id " + id + " not found");
-        }
-        return film;
+        return filmStorage.getFilmById(id);
     }
 
-    private void checkExistence(Integer userId) {
-        if (userStorage.getUserById(userId) == null) {
-            throw new NotFoundException("User with id = " + userId + " was not found");
+    public Film delete(Integer filmIdRequest) {
+        Film removeFilm = filmStorage.getFilmById(filmIdRequest);
+
+        removeFilm = filmStorage.delete(removeFilm);
+
+        return removeFilm;
+    }
+
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        if (userId == friendId) {
+            throw new IllegalArgumentException("Пользователь и друг не могут быть одним и тем же человеком");
         }
+        userService.getUserById(userId);
+        userService.getUserById(friendId);
+        List<Film> commonFilms = filmStorage.getCommonFilms(userId, friendId);
+        return commonFilms != null ? commonFilms : Collections.emptyList();
     }
 }

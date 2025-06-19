@@ -2,14 +2,14 @@ package ru.yandex.practicum.filmorate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FeedService;
 import ru.yandex.practicum.filmorate.service.FilmService;
-import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
-import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.*;
 
 import java.time.LocalDate;
 
@@ -19,7 +19,10 @@ public class FilmValidationTest {
 
     private final UserStorage userStorage = new InMemoryUserStorage();
     private final FilmStorage filmStorage = new InMemoryFilmStorage();
-    private final FilmService filmService = new FilmService(filmStorage, userStorage);
+    private final FeedStorage feedStorage = new FeedDbStorage(new JdbcTemplate());
+    private final FeedService feedService = new FeedService(feedStorage, userStorage);
+    private final UserService userService = new UserService(userStorage, feedService);
+    private final FilmService filmService = new FilmService(filmStorage, userService, feedService);
     private final FilmController controller = new FilmController(filmService);
     private Film existing;
 

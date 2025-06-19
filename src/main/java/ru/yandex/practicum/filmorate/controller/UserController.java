@@ -2,9 +2,12 @@ package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.RecommendationService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
+import java.util.Collection;
 import java.util.List;
 
 @Slf4j
@@ -12,9 +15,11 @@ import java.util.List;
 @RestController
 public class UserController {
     private final UserService userService;
+    private final RecommendationService recommendationsService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, RecommendationService recommendationsService) {
         this.userService = userService;
+        this.recommendationsService = recommendationsService;
     }
 
     @PostMapping
@@ -55,7 +60,7 @@ public class UserController {
 
     @GetMapping("/{userId}/friends")
     public List<User> getFriends(@PathVariable int userId) {
-        log.info("Display a list of all friends {} of user {}", userService.getAllUsers(), userId);
+        log.info("Запрошены друзья пользователя с id {}", userId);
         return userService.getFriends(userId);
     }
 
@@ -63,5 +68,25 @@ public class UserController {
     public List<User> getCommonFriends(@PathVariable int userId, @PathVariable int friendId) {
         log.info("Display a list of common friends {} of users {} and {}", userService.getAllUsers(), userId, friendId);
         return userService.getCommonFriends(userId, friendId);
+    }
+
+    @GetMapping("/{userId}/recommendations")
+    public Collection<Film> getFilmsRecommendations(@PathVariable int userId) {
+        log.info("Display a list of recommendations for user with id {}", userId);
+        return recommendationsService.getFilmsRecommendations(userId);
+    }
+
+    @DeleteMapping("/{userId}")
+    public User delete(@PathVariable(name = "userId") Integer userIdRequest) {
+        log.info("Поступил запрос на удаление данных пользователя с id {}.", userIdRequest);
+
+        return userService.delete(userIdRequest);
+    }
+
+    @GetMapping("/{id}")
+    public User getUserById(@PathVariable(name = "id") Integer userId) {
+        log.info("Поступил запрос на получение данных пользователя с id {}.", userId);
+
+        return userService.getUserById(userId);
     }
 }

@@ -9,7 +9,10 @@ import org.springframework.context.annotation.Import;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MpaRating;
+import ru.yandex.practicum.filmorate.storage.DirectorDbStorage;
 import ru.yandex.practicum.filmorate.storage.FilmDbStorage;
+import ru.yandex.practicum.filmorate.storage.extractors.FilmsResultSetExtractor;
+import ru.yandex.practicum.filmorate.storage.mappers.DirectorRowMapper;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -21,7 +24,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @JdbcTest
 @AutoConfigureTestDatabase
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-@Import({FilmDbStorage.class})
+@Import({FilmDbStorage.class,
+        DirectorDbStorage.class,
+        DirectorRowMapper.class, FilmsResultSetExtractor.class})
 class FilmDbStorageTest {
 
     @Autowired
@@ -43,7 +48,7 @@ class FilmDbStorageTest {
         Film result = filmStorage.getFilmById(loaded.getId());
         assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("Interstellar");
-        assertThat(result.getId()).isEqualTo(5);
+        assertThat(result.getId()).isEqualTo(loaded.getId());
         assertThat(result.getMpa().getId()).isEqualTo(1);
         assertThat(result.getGenres()).hasSize(1);
     }
@@ -73,7 +78,7 @@ class FilmDbStorageTest {
 
     @Test
     void testGetPopularFilms() {
-        List<Film> popular = filmStorage.getPopularFilms(2);
+        List<Film> popular = filmStorage.getPopularFilms(2, null, null);
         assertThat(popular.size()).isGreaterThanOrEqualTo(2);
     }
 }
