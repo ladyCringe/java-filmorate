@@ -193,6 +193,32 @@ public class FilmDbStorage implements FilmStorage {
             "LEFT JOIN FILM_DIRECTOR tt_fd ON tt_fd.film_id = tt_f.id\n" +
             TABLE_PARTS_QUERY_FILMS +
             "ORDER BY popularity DESC\n";
+    private static final String FIND_RECOMMENDATIONS = TOP_PART_QUERY_FILMS + """
+            FROM films tt_f
+            JOIN (
+                SELECT l.film_id
+                FROM likes l
+                JOIN (
+                    SELECT l.user_id
+                    FROM likes l
+                    JOIN (
+                        SELECT film_id
+                        FROM likes
+                        WHERE user_id = :user_id
+                    ) ulf ON l.film_id = ulf.film_id
+                    WHERE l.user_id <> :user_id
+                    GROUP BY l.user_id
+                    ORDER BY COUNT(*) DESC
+                    LIMIT 1
+                ) su ON l.user_id = su.user_id
+                WHERE l.film_id NOT IN (
+                    SELECT film_id
+                    FROM likes
+                    WHERE user_id = :user_id
+                )
+            ) recommended_film_ids ON tt_f.id = recommended_film_ids.film_id
+            LEFT JOIN FILM_DIRECTOR tt_fd ON tt_fd.film_id = tt_f.id
+            """ + TABLE_PARTS_QUERY_FILMS + ";";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -348,36 +374,11 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Collection<Film> getFilmsRecommendations(int userId) {
-        String sql = """
-        SELECT f.*
-        FROM films f
-        JOIN (
-            SELECT l.film_id
-            FROM likes l
-            JOIN (
-                SELECT l.user_id
-                FROM likes l
-                JOIN (
-                    SELECT film_id
-                    FROM likes
-                    WHERE user_id = ?
-                ) ulf ON l.film_id = ulf.film_id
-                WHERE l.user_id <> ?
-                GROUP BY l.user_id
-                ORDER BY COUNT(*) DESC
-                LIMIT 1
-            ) su ON l.user_id = su.user_id
-            WHERE l.film_id NOT IN (
-                SELECT film_id
-                FROM likes
-                WHERE user_id = ?
-            )
-        ) recommended_film_ids ON f.id = recommended_film_ids.film_id;
-        """;
-
         log.info("searching for recommendations for user with id = {}", userId);
 
-        return jdbcTemplate.query(sql, this::mapRowToFilm, userId, userId, userId);
+        SqlParameterSource parameters = new MapSqlParameterSource("user_id", userId);
+
+        return namedParameterJdbcTemplate.query(FIND_RECOMMENDATIONS, parameters, filmsResultSetExtractor);
     }
 
     @Override
